@@ -15,21 +15,6 @@ var bouncer = require('koa-bouncer');
 app.use(bouncer.middleware());
 ```
 
-`bouncer.middleware()` is middleware that extends the koa context.
-
-- `this.valid` is a map of validated param names to their validated values that's populated by the validator methods
-- `this.validateBody('uname')` begins a validation context on a body param named 'uname'
-- `this.validate(expression, tip)` allows you to check arbitrary expressions
-
-`this.validateBody` and `this.validate` throw a bouncer.ValidationError when they fail.
-
-`bouncer.ValidationError` is a subclassed `Error` extended with a `bouncer` object:
-
-    err.bouncer.key     //=> 'uname'
-    err.bouncer.message //=> 'Username taken'
-
-Use `ex instanceof bouncer.ValidationError` to see if an error is a ValidationError created by bouncer.
-
 ## Demo
 
 ``` javascript
@@ -45,27 +30,33 @@ app.post('/users', function*() {
 
   // === Validate parameters ===
 
+  var uname, email, password1, password2
   try {
-    this.validateBody('uname')
+    uname = this.validateBody('uname')
       .notEmpty('Username required')
       .trim()
       .isLength(3, 15 'Username must be 3-15 characters')
       .match(/^[a-z0-9 ]+$/i, 'Username must only contain a-z, 0-9, and spaces')
       .match(/[a-z]/i, 'Username must contain at least one letter (a-z)')
       .notMatch(/[ ]{2,}/, 'Username contains consecutive spaces')
-      .checkNot(yield db.findUserByUname(this.valid.uname), 'Username taken');
+      .value;
+    this.checkNot(yield db.findUserByUname(uname), 'Username taken');
     // Email is optional
-    if (this.request.body.email)
-      this.validateBody('email')
+    if (this.request.body.email) {}
+      email = this.validateBody('email')
         .notEmpty('Email required')
         .trim()
         .isEmail('Email must be valid')
-        .checkNot(yield db.findUserByEmail(this.valid.email), 'Email taken');
-    this.validateBody('password2')
-      .notEmpty('Password confirmation required');
-    this.validateBody('password1')
+        .value;
+      this.checkNot(yield db.findUserByEmail(email), 'Email taken');
+    }
+    password2 = this.validateBody('password2')
+      .notEmpty('Password confirmation required')
+      .value;
+    password1 = this.validateBody('password1')
       .notEmpty('Password required')
-      .eq(this.valid.password2, 'Password confirmation must match');
+      .eq(password2, 'Password confirmation must match')
+      .value;
   } catch(ex) {
     if (ex instanceof bouncer.ValidationError) {
       this.status = 400;
@@ -77,10 +68,7 @@ app.post('/users', function*() {
 
   // === Validation success ===
 
-  // Read validated params from the `this.valid` object
-  // Ex: this.valid => { uname: 'foo', password1: 'secret', password2: 'secret' }
-
-  this.body = this.valid;
+  this.body = [uname, email, password1, password2];
 });
 ```
 
@@ -116,11 +104,7 @@ Content-Length: 57
 Content-Type: application/json; charset=utf-8
 Date: Thu, 05 Mar 2015 03:34:30 GMT
 
-{
-    "password1": "secret",
-    "password2": "secret",
-    "uname": "foo"
-}
+["foo", null, "secret", "secret"]
 ```
 
 ## License

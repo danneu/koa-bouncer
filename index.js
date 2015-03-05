@@ -20,7 +20,6 @@ function Validator(props) {
   this.key = props.key;
   this.value = props.value;
   this.type = props.type;
-  this.valid = props.valid;
   this.throwError = function(tip) {
     throw new ValidationError(this.key, tip);
   };
@@ -29,7 +28,6 @@ function Validator(props) {
 Validator.prototype.notEmpty = function(tip) {
   if (_.isEmpty(this.value))
     this.throwError(tip || this.key + ' must not be empty');
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -37,7 +35,6 @@ Validator.prototype.notEmpty = function(tip) {
 Validator.prototype.isIn = function(arr, tip) {
   if (!_.contains(arr, this.value))
     this.throwError(tip || 'Invalid ' + this.key);
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -45,7 +42,6 @@ Validator.prototype.isIn = function(arr, tip) {
 Validator.prototype.isNotIn = function(arr, tip) {
   if (_.contains(arr, this.value))
     this.throwError(tip || 'Invalid ' + this.key);
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -53,7 +49,6 @@ Validator.prototype.isNotIn = function(arr, tip) {
 Validator.prototype.isArray = function(tip) {
   if (!_.isArray(this.value))
     this.throwError(tip || util.format('%s must be an array', this.key));
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -62,7 +57,6 @@ Validator.prototype.isEmail = function(tip) {
   if (!validator.isEmail(this.value))
     this.throwError(tip || util.format('%s must be an email address', this.key));
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -71,7 +65,6 @@ Validator.prototype.isUrl = function(tip) {
   if (!validator.isURL(this.value))
     this.throwError(tip || util.format('%s must be a URL', this.key));
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -80,7 +73,6 @@ Validator.prototype.eq = function(otherValue, tip) {
   if (this.value !== otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -89,7 +81,6 @@ Validator.prototype.gt = function(otherValue, tip) {
   if (this.value <= otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -98,7 +89,6 @@ Validator.prototype.gte = function(otherValue, tip) {
   if (this.value < otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -107,7 +97,6 @@ Validator.prototype.lt = function(otherValue, tip) {
   if (this.value >= otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -116,7 +105,6 @@ Validator.prototype.lte = function(otherValue, tip) {
   if (this.value > otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -126,14 +114,12 @@ Validator.prototype.isLength = function(min, max, tip) {
     this.throwError(
       tip || util.format('%s must be %s-%s characters long', this.key, min, max)
     );
-  this.valid[this.key] = this.value;
   return this;
 };
 
 // If value is undefined, set it to given value
 Validator.prototype.default = function(v) {
-  this.valid[this.key] = this.value =
-    _.isUndefined(this.value) ? v : this.value;
+  this.value = _.isUndefined(this.value) ? v : this.value;
   return this;
 };
 
@@ -142,15 +128,14 @@ Validator.prototype.toInt = function(tip) {
   var result = parseInt(this.value, 10);
   if (_.isNaN(result))
     this.throwError(tip || this.key + ' must be an integer');
-  this.valid[this.key] = this.value = result;
+  this.value = result;
   return this;
 };
 
 // If value is not already an array, puts it in a singleton array
 Validator.prototype.toArray = function(tip) {
   this.value = _.isUndefined(this.value) ? [] : this.value;
-  this.valid[this.key] = this.value =
-    (_.isArray(this.value) ? this.value : [this.value]);
+  this.value = (_.isArray(this.value) ? this.value : [this.value]);
   return this;
 };
 
@@ -166,21 +151,21 @@ Validator.prototype.toInts = function(tip) {
   if (!_.every(results, Number.isInteger))
     this.throwError(tip || this.key + ' must be an array of integers');
 
-  this.valid[this.key] = this.value = results;
+  this.value = results;
   return this;
 };
 
 // Converts value to array if necessary, then de-dupes it
 Validator.prototype.uniq = function(tip) {
   this.toArray();
-  this.valid[this.key] = this.value = _.uniq(this.value);
+  this.value = _.uniq(this.value);
   return this;
 };
 
 // Converts value to boolean
 // Always succeeds
 Validator.prototype.toBoolean = function() {
-  this.valid[this.key] = this.value = !!this.value;
+  this.value = !!this.value;
   return this;
 };
 
@@ -189,7 +174,7 @@ Validator.prototype.toFloat = function(tip) {
   var result = parseFloat(this.value);
   if (_.isNaN(result))
     this.throwError(tip || this.key + ' must be a float');
-  this.valid[this.key] = this.value = result;
+  this.value = result;
   return this;
 };
 
@@ -197,7 +182,7 @@ Validator.prototype.toFloat = function(tip) {
 // Undefined value converts to empty string
 // Always succeeds
 Validator.prototype.toString = function() {
-  this.valid[this.key] = this.value = (this.value && this.value.toString() || '');
+  this.value = (this.value && this.value.toString() || '');
   return this;
 };
 
@@ -207,7 +192,7 @@ Validator.prototype.toString = function() {
 // Always succeeds
 Validator.prototype.toLowerCase = function() {
   this.toString();
-  this.valid[this.key] = this.value = this.value.toLowerCase();
+  this.value = this.value.toLowerCase();
   return this;
 };
 
@@ -216,7 +201,7 @@ Validator.prototype.toLowerCase = function() {
 // Always succeeds
 Validator.prototype.toUpperCase = function() {
   this.toString();
-  this.valid[this.key] = this.value = this.value.toUpperCase();
+  this.value = this.value.toUpperCase();
   return this;
 };
 
@@ -224,7 +209,7 @@ Validator.prototype.toUpperCase = function() {
 // Always succeeds
 Validator.prototype.trim = function() {
   this.toString();
-  this.valid[this.key] = this.value = this.value.trim();
+  this.value = this.value.trim();
   return this;
 };
 
@@ -233,7 +218,6 @@ Validator.prototype.notMatch = function(regexp, tip) {
 	if (regexp.test(this.value))
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
 	return this;
 };
 
@@ -242,7 +226,6 @@ Validator.prototype.match = function(regexp, tip) {
 	if (!regexp.test(this.value))
     this.throwError(tip || 'Invalid ' + this.key);
 
-  this.valid[this.key] = this.value;
 	return this;
 };
 
@@ -250,7 +233,6 @@ Validator.prototype.check = function(result, tip) {
   if (!result)
     this.throwError(tip);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -258,7 +240,6 @@ Validator.prototype.checkNot = function(result, tip) {
   if (!!result)
     this.throwError(tip);
 
-  this.valid[this.key] = this.value;
   return this;
 };
 
@@ -270,13 +251,12 @@ exports.middleware = function middleware() {
   return function*(next) {
     debug('Initializing koa-bouncer');
     var self = this;
-    this.valid = {};
 
     this.validateQuery = function(key) {
       return new Validator({
         key: key,
         // Use existing this.valid value if there is one
-        value: self.valid[key] || self.query[key],
+        value: self.query[key],
         type: 'query',
         valid: self.valid
       });
@@ -285,14 +265,17 @@ exports.middleware = function middleware() {
       return new Validator({
         key: key,
         // Use existing this.valid value if there is one
-        value: self.valid[key] || self.request.body[key],
+        value: self.request.body[key],
         type: 'body',
         valid: self.valid
       });
     };
-    this.validate = function(result, tip) {
-      debug('[check] result: %j, tip: %s', result, tip);
+    this.validate = this.check = function(result, tip) {
       if (!result)
+        throw new ValidationError(null, tip);
+    };
+    this.validateNot = this.checkNot = function(result, tip) {
+      if (!!result)
         throw new ValidationError(null, tip);
     };
     yield next;
