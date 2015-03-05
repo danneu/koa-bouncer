@@ -1,0 +1,30 @@
+{
+  "name": "koa-bouncer",
+  "version": "0.0.1",
+  "description": "A parameter validation library for Koa routes",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danneu/koa-bouncer"
+  },
+  "keywords": [
+    "validation",
+    "koa"
+  ],
+  "author": "Dan Neumann <danrodneu@gmail.com> (https://github.com/danneu)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danneu/koa-bouncer/issues"
+  },
+  "homepage": "https://github.com/danneu/koa-bouncer",
+  "dependencies": {
+    "better-assert": "^1.0.2",
+    "debug": "^2.1.2",
+    "lodash": "^3.3.1",
+    "validator": "^3.33.0"
+  }
+}
