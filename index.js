@@ -18,7 +18,8 @@ ValidationError.prototype = _.create(Error.prototype);
 
 function Validator(props) {
   this.key = props.key;
-  this.value = props.value;
+  this.val = props.val;
+  this.vals = props.vals;
   this.type = props.type;
   this.throwError = function(tip) {
     throw new ValidationError(this.key, tip);
@@ -26,116 +27,129 @@ function Validator(props) {
 }
 
 Validator.prototype.notEmpty = function(tip) {
-  if (_.isEmpty(this.value))
+  if (_.isEmpty(this.val))
     this.throwError(tip || this.key + ' must not be empty');
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value is in given array
 Validator.prototype.isIn = function(arr, tip) {
-  if (!_.contains(arr, this.value))
+  if (!_.contains(arr, this.val))
     this.throwError(tip || 'Invalid ' + this.key);
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value is not in given array
 Validator.prototype.isNotIn = function(arr, tip) {
-  if (_.contains(arr, this.value))
+  if (_.contains(arr, this.val))
     this.throwError(tip || 'Invalid ' + this.key);
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value is an array
 Validator.prototype.isArray = function(tip) {
-  if (!_.isArray(this.value))
+  if (!_.isArray(this.val))
     this.throwError(tip || util.format('%s must be an array', this.key));
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value is an email address
 Validator.prototype.isEmail = function(tip) {
-  if (!validator.isEmail(this.value))
+  if (!validator.isEmail(this.val))
     this.throwError(tip || util.format('%s must be an email address', this.key));
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value is a url
 Validator.prototype.isUrl = function(tip) {
-  if (!validator.isURL(this.value))
+  if (!validator.isURL(this.val))
     this.throwError(tip || util.format('%s must be a URL', this.key));
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value is === equivalent to given value
 Validator.prototype.eq = function(otherValue, tip) {
-  if (this.value !== otherValue)
+  if (this.val !== otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value > given value
 Validator.prototype.gt = function(otherValue, tip) {
-  if (this.value <= otherValue)
+  if (this.val <= otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value >= given value
 Validator.prototype.gte = function(otherValue, tip) {
-  if (this.value < otherValue)
+  if (this.val < otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value < given value
 Validator.prototype.lt = function(otherValue, tip) {
-  if (this.value >= otherValue)
+  if (this.val >= otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value <= given value
 Validator.prototype.lte = function(otherValue, tip) {
-  if (this.value > otherValue)
+  if (this.val > otherValue)
     this.throwError(tip || 'Invalid ' + this.key);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // Ensures value's length is [min, max] inclusive
 Validator.prototype.isLength = function(min, max, tip) {
-  if (this.value.length < min || this.value.length > max)
+  if (this.val.length < min || this.val.length > max)
     this.throwError(
       tip || util.format('%s must be %s-%s characters long', this.key, min, max)
     );
+  this.vals[this.key] = this.val;
   return this;
 };
 
 // If value is undefined, set it to given value
 Validator.prototype.default = function(v) {
-  this.value = _.isUndefined(this.value) ? v : this.value;
+  this.vals[this.key] = this.val = _.isUndefined(this.val) ? v : this.val;
   return this;
 };
 
 // Converts value to integer, throwing if it fails
 Validator.prototype.toInt = function(tip) {
-  var result = parseInt(this.value, 10);
+  var result = parseInt(this.val, 10);
   if (_.isNaN(result))
     this.throwError(tip || this.key + ' must be an integer');
-  this.value = result;
+  this.vals[this.key] = this.val = result;
   return this;
 };
 
 // If value is not already an array, puts it in a singleton array
 Validator.prototype.toArray = function(tip) {
-  this.value = _.isUndefined(this.value) ? [] : this.value;
-  this.value = (_.isArray(this.value) ? this.value : [this.value]);
+  this.val = _.isUndefined(this.val) ? [] : this.val;
+  this.val = (_.isArray(this.val) ? this.val : [this.val]);
+  this.vals[this.key] = this.val;
   return this;
 };
 
@@ -144,37 +158,37 @@ Validator.prototype.toArray = function(tip) {
 // throwing if any of them fail conversion
 Validator.prototype.toInts = function(tip) {
   this.toArray();
-  var results = this.value.map(function(v) {
+  var results = this.val.map(function(v) {
     return parseInt(v, 10);
   });
 
   if (!_.every(results, Number.isInteger))
     this.throwError(tip || this.key + ' must be an array of integers');
 
-  this.value = results;
+  this.vals[this.key] = this.val = results;
   return this;
 };
 
 // Converts value to array if necessary, then de-dupes it
 Validator.prototype.uniq = function(tip) {
   this.toArray();
-  this.value = _.uniq(this.value);
+  this.vals[this.key] = this.val = _.uniq(this.val);
   return this;
 };
 
 // Converts value to boolean
 // Always succeeds
 Validator.prototype.toBoolean = function() {
-  this.value = !!this.value;
+  this.vals[this.key] = this.val = !!this.val;
   return this;
 };
 
 // Converts value to float, throwing if it fails
 Validator.prototype.toFloat = function(tip) {
-  var result = parseFloat(this.value);
+  var result = parseFloat(this.val);
   if (_.isNaN(result))
     this.throwError(tip || this.key + ' must be a float');
-  this.value = result;
+  this.vals[this.key] = this.val = result;
   return this;
 };
 
@@ -182,7 +196,7 @@ Validator.prototype.toFloat = function(tip) {
 // Undefined value converts to empty string
 // Always succeeds
 Validator.prototype.toString = function() {
-  this.value = (this.value && this.value.toString() || '');
+  this.vals[this.key] = this.val = (this.val && this.val.toString() || '');
   return this;
 };
 
@@ -192,7 +206,7 @@ Validator.prototype.toString = function() {
 // Always succeeds
 Validator.prototype.toLowerCase = function() {
   this.toString();
-  this.value = this.value.toLowerCase();
+  this.vals[this.key] = this.val = this.val.toLowerCase();
   return this;
 };
 
@@ -201,7 +215,7 @@ Validator.prototype.toLowerCase = function() {
 // Always succeeds
 Validator.prototype.toUpperCase = function() {
   this.toString();
-  this.value = this.value.toUpperCase();
+  this.vals[this.key] = this.val = this.val.toUpperCase();
   return this;
 };
 
@@ -209,30 +223,33 @@ Validator.prototype.toUpperCase = function() {
 // Always succeeds
 Validator.prototype.trim = function() {
   this.toString();
-  this.value = this.value.trim();
+  this.vals[this.key] = this.val = this.val.trim();
   return this;
 };
 
 // Assert that value does not match the supplied regular expression.
 Validator.prototype.notMatch = function(regexp, tip) {
-	if (regexp.test(this.value))
+  if (regexp.test(this.val))
     this.throwError(tip || 'Invalid ' + this.key);
 
-	return this;
+  this.vals[this.key] = this.val;
+  return this;
 };
 
 // Assert that a string does match the supplied regular expression.
 Validator.prototype.match = function(regexp, tip) {
-	if (!regexp.test(this.value))
+  if (!regexp.test(this.val))
     this.throwError(tip || 'Invalid ' + this.key);
 
-	return this;
+  this.vals[this.key] = this.val;
+  return this;
 };
 
 Validator.prototype.check = function(result, tip) {
   if (!result)
     this.throwError(tip);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
@@ -240,6 +257,7 @@ Validator.prototype.checkNot = function(result, tip) {
   if (!!result)
     this.throwError(tip);
 
+  this.vals[this.key] = this.val;
   return this;
 };
 
@@ -251,23 +269,22 @@ exports.middleware = function middleware() {
   return function*(next) {
     debug('Initializing koa-bouncer');
     var self = this;
+    this.vals = {};
 
     this.validateQuery = function(key) {
       return new Validator({
         key: key,
-        // Use existing this.valid value if there is one
-        value: self.query[key],
-        type: 'query',
-        valid: self.valid
+        val: self.vals[key] || self.query[key],
+        vals: self.vals,
+        type: 'query'
       });
     };
     this.validateBody = function(key) {
       return new Validator({
         key: key,
-        // Use existing this.valid value if there is one
-        value: self.request.body[key],
-        type: 'body',
-        valid: self.valid
+        val: self.vals[key] || self.request.body[key],
+        vals: self.vals,
+        type: 'body'
       });
     };
     this.validate = this.check = function(result, tip) {
