@@ -265,6 +265,8 @@ Validator.prototype.checkNot = function(result, tip) {
 
 exports.ValidationError = ValidationError;
 
+exports.Validator = Validator;
+
 exports.middleware = function middleware() {
   return function*(next) {
     debug('Initializing koa-bouncer');
