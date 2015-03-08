@@ -261,6 +261,15 @@ Validator.prototype.checkNot = function(result, tip) {
   return this;
 };
 
+// Arbitrarily transform the current value inside a validator.
+//
+// f is a function that takes one argument: the current value in the validator.
+// Whatever value f returns becomes the new value.
+Validator.prototype.tap = function(f) {
+  this.vals[this.key] = this.val = f(this.val);
+  return this;
+};
+
 // API ///////////////////////////////////////////////
 
 exports.ValidationError = ValidationError;
