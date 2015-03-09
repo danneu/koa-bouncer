@@ -276,6 +276,23 @@ Validator.prototype.compact = function() {
   return this;
 };
 
+// Pipes val through predicate function that must return truthy
+Validator.prototype.checkPred = function(pred, tip) {
+  if (!pred(this.val))
+    this.throwError(tip);
+
+  this.vals[this.key] = this.val;
+  return this;
+};
+
+Validator.prototype.checkNotPred = function(pred, tip) {
+  if (pred(this.val))
+    this.throwError(tip);
+
+  this.vals[this.key] = this.val;
+  return this;
+};
+
 // API ///////////////////////////////////////////////
 
 exports.ValidationError = ValidationError;
