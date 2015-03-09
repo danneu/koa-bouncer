@@ -270,6 +270,12 @@ Validator.prototype.tap = function(f) {
   return this;
 };
 
+// Removes falsey/empty things. Always returns array.
+Validator.prototype.compact = function() {
+  this.vals[this.key] = _.compact(this.val);
+  return this;
+};
+
 // API ///////////////////////////////////////////////
 
 exports.ValidationError = ValidationError;
