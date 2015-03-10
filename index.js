@@ -22,7 +22,7 @@ function Validator(props) {
   this.vals = props.vals;
   this.type = props.type;
   this.throwError = function(tip) {
-    throw new ValidationError(this.key, tip);
+    throw new ValidationError(this.key, tip || 'Invalid value for ' + this.key);
   };
 }
 
