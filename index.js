@@ -261,6 +261,16 @@ Validator.prototype.checkNot = function(result, tip) {
   return this;
 };
 
+Validator.prototype.fromJson = function(tip) {
+  try {
+    var parsedObj = JSON.parse(this.val);
+  } catch(ex) {
+    this.throwError(tip || 'Invalid JSON for ' + this.key);
+  }
+  this.vals[this.key] = this.val = parsedObj;
+  return this;
+};
+
 // Arbitrarily transform the current value inside a validator.
 //
 // f is a function that takes one argument: the current value in the validator.
