@@ -270,7 +270,9 @@ Validator.prototype.tap = function(f) {
   try {
     result = f(this.val);
   } catch(ex) {
-    this.throwError();
+    if (ex instanceof ValidationError)
+      this.throwError();
+    throw ex;
   }
   this.vals[this.key] = this.val = result;
   return this;
