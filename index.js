@@ -266,7 +266,13 @@ Validator.prototype.checkNot = function(result, tip) {
 // f is a function that takes one argument: the current value in the validator.
 // Whatever value f returns becomes the new value.
 Validator.prototype.tap = function(f) {
-  this.vals[this.key] = this.val = f(this.val);
+  var result;
+  try {
+    result = f(this.val);
+  } catch(ex) {
+    this.throwError();
+  }
+  this.vals[this.key] = this.val = result;
   return this;
 };
 
