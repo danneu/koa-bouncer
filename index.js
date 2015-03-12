@@ -25,6 +25,11 @@ function Validator(props) {
   this.throwError = function(tip) {
     throw new ValidationError(this.key, tip || 'Invalid value for ' + this.key);
   };
+
+  // Populate vals on init
+  // Ex: this.validateBody('foo') will populate this.vals.foo
+  //     with this.request.body.foo (even if undefined)
+  this.vals[this.key] = this.val;
 }
 
 Validator.prototype.notEmpty = function(tip) {
