@@ -17,6 +17,7 @@ function ValidationError(key, message) {
 ValidationError.prototype = _.create(Error.prototype);
 
 function Validator(props) {
+  this.ctx = props.ctx;  // Koa context
   this.key = props.key;
   this.val = props.val;
   this.vals = props.vals;
@@ -278,7 +279,7 @@ Validator.prototype.fromJson = function(tip) {
 Validator.prototype.tap = function(f) {
   var result;
   try {
-    result = f(this.val);
+    result = f.bind(this.ctx)(this.val);
   } catch(ex) {
     if (ex instanceof ValidationError)
       this.throwError();
@@ -325,6 +326,7 @@ exports.middleware = function middleware() {
 
     this.validateQuery = function(key) {
       return new Validator({
+        ctx: self,
         key: key,
         val: self.vals[key] || self.query[key],
         vals: self.vals,
@@ -333,6 +335,7 @@ exports.middleware = function middleware() {
     };
     this.validateBody = function(key) {
       return new Validator({
+        ctx: self,
         key: key,
         val: self.vals[key] || self.request.body[key],
         vals: self.vals,
