@@ -139,9 +139,21 @@ Validator.prototype.default = function(v) {
 
 // Converts value to integer, throwing if it fails
 Validator.prototype.toInt = function(tip) {
-  var result = parseInt(this.val, 10);
-  if (_.isNaN(result))
-    this.throwError(tip || this.key + ' must be an integer');
+  this.isInt(tip);
+  this.vals[this.key] = this.val = parseInt(this.val, 10);
+  return this;
+};
+
+Validator.prototype.isInt = function(tip) {
+  if (!validator.isInt(this.val))
+    this.throwError(tip || util.format('%s must be an integer', this.key));
+  this.vals[this.key] = this.val;
+  return this;
+};
+
+Validator.prototype.isUuid = function(tip) {
+  if (!validator.isUUID(this.val))
+    this.throwError(tip || util.format('%s must be a UUID', this.key));
   this.vals[this.key] = this.val = result;
   return this;
 };
@@ -159,13 +171,11 @@ Validator.prototype.toArray = function(tip) {
 // throwing if any of them fail conversion
 Validator.prototype.toInts = function(tip) {
   this.toArray();
+  if (!_.every(this.val, validator.isInt))
+    this.throwError(tip || this.key + ' must be an array of integers');
   var results = this.val.map(function(v) {
     return parseInt(v, 10);
   });
-
-  if (!_.every(results, Number.isInteger))
-    this.throwError(tip || this.key + ' must be an array of integers');
-
   this.vals[this.key] = this.val = results;
   return this;
 };
