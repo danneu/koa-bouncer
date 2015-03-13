@@ -159,7 +159,7 @@ Validator.prototype.isInt = function(tip) {
 Validator.prototype.isUuid = function(tip) {
   if (!validator.isUUID(this.val))
     this.throwError(tip || util.format('%s must be a UUID', this.key));
-  this.vals[this.key] = this.val = result;
+  this.vals[this.key] = this.val;
   return this;
 };
 
