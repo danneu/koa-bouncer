@@ -136,9 +136,18 @@ Validator.prototype.isLength = function(min, max, tip) {
   return this;
 };
 
-// If value is undefined, set it to given value
-Validator.prototype.default = function(v) {
-  this.vals[this.key] = this.val = _.isUndefined(this.val) ? v : this.val;
+// If value is undefined, set it to given value or to the value
+// returned by a function.
+Validator.prototype.default = function(valueOrFunction) {
+  var val = this.val;
+  if (_.isUndefined(this.val))
+    if (_.isFunction(valueOrFunction))
+      // Run fn with `this` bound to Koa context
+      val = valueOrFunction.bind(this.ctx)();
+    else
+      val = valueOrFunction;
+
+  this.vals[this.key] = this.val = val;
   return this;
 };
 
