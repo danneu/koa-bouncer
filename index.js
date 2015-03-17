@@ -144,13 +144,15 @@ Validator.prototype.default = function(v) {
 
 // Converts value to integer, throwing if it fails
 Validator.prototype.toInt = function(tip) {
-  this.isInt(tip);
+  if (!validator.isInt(this.val))
+    this.throwError(tip || util.format('%s must be an integer', this.key));
   this.vals[this.key] = this.val = parseInt(this.val, 10);
   return this;
 };
 
+// Checks it is already an integer (and type number), throws if its not
 Validator.prototype.isInt = function(tip) {
-  if (!validator.isInt(this.val))
+  if (!Number.isInteger(this.val))
     this.throwError(tip || util.format('%s must be an integer', this.key));
   this.vals[this.key] = this.val;
   return this;
