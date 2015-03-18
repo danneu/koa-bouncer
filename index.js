@@ -350,6 +350,15 @@ exports.middleware = function middleware() {
     var self = this;
     this.vals = {};
 
+    this.validateParam = function(key) {
+      return new Validator({
+        ctx: self,
+        key: key,
+        val: self.vals[key] || self.params[key],
+        vals: self.vals,
+        type: 'param'
+      });
+    };
     this.validateQuery = function(key) {
       return new Validator({
         ctx: self,
