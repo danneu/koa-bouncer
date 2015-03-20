@@ -323,7 +323,7 @@ Validator.prototype.compact = function() {
 
 // Pipes val through predicate function that must return truthy
 Validator.prototype.checkPred = function(pred, tip) {
-  if (!pred(this.val))
+  if (!pred.call(this.ctx, this.val))
     this.throwError(tip);
 
   this.vals[this.key] = this.val;
@@ -331,7 +331,7 @@ Validator.prototype.checkPred = function(pred, tip) {
 };
 
 Validator.prototype.checkNotPred = function(pred, tip) {
-  if (pred(this.val))
+  if (pred.call(this.ctx, this.val))
     this.throwError(tip);
 
   this.vals[this.key] = this.val;
