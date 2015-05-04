@@ -220,9 +220,9 @@ Validator.prototype.toBoolean = function() {
 
 // Converts value to float, throwing if it fails
 Validator.prototype.toFloat = function(tip) {
-  var result = parseFloat(this.val);
-  if (_.isNaN(result))
+  if (!validator.isFloat(this.val))
     this.throwError(tip || this.key + ' must be a float');
+  var result = parseFloat(this.val);
   this.vals[this.key] = this.val = result;
   return this;
 };
