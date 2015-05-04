@@ -159,10 +159,18 @@ Validator.prototype.toInt = function(tip) {
   return this;
 };
 
-// Checks it is already an integer (and type number), throws if its not
+// Checks if is already an integer (and type number), throws if its not
 Validator.prototype.isInt = function(tip) {
   if (!Number.isInteger(this.val))
     this.throwError(tip || util.format('%s must be an integer', this.key));
+  this.vals[this.key] = this.val;
+  return this;
+};
+
+// Checks if is already a float (and type number), throws if its not
+Validator.prototype.isFloat = function(tip) {
+  if (!Number.isFinite(this.val))
+    this.throwError(tip || util.format('%s must be a float', this.key));
   this.vals[this.key] = this.val;
   return this;
 };
