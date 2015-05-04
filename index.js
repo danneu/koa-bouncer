@@ -354,7 +354,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] || self.params[key],
+        val: self.vals[key] === undefined ? self.params[key] : self.vals[key],
         vals: self.vals,
         type: 'param'
       });
@@ -363,7 +363,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] || self.query[key],
+        val: self.vals[key] === undefined ? self.query[key] : self.vals[key],
         vals: self.vals,
         type: 'query'
       });
@@ -372,7 +372,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] || self.request.body[key],
+        val: self.vals[key] === undefined ? self.request.body[key] : self.vals[key],
         vals: self.vals,
         type: 'body'
       });
