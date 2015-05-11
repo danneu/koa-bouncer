@@ -127,6 +127,9 @@ Validator.prototype.lte = function(otherValue, tip) {
 };
 
 // Ensures value's length is [min, max] inclusive
+//
+// Note: You must ensure this.val has a `.length` property before calling
+// this method.
 Validator.prototype.isLength = function(min, max, tip) {
   if (this.val.length < min || this.val.length > max)
     this.throwError(
@@ -148,6 +151,14 @@ Validator.prototype.default = function(valueOrFunction) {
       val = valueOrFunction;
 
   this.vals[this.key] = this.val = val;
+  return this;
+};
+
+Validator.prototype.isString = function(tip) {
+  if (!_.isString()) {
+    this.throwError(tip || util.format('%s must be a string', this.key));
+  }
+  this.vals[this.key] = this.val;
   return this;
 };
 
