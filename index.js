@@ -155,7 +155,7 @@ Validator.prototype.default = function(valueOrFunction) {
 };
 
 Validator.prototype.isString = function(tip) {
-  if (!_.isString()) {
+  if (!_.isString(this.val)) {
     this.throwError(tip || util.format('%s must be a string', this.key));
   }
   this.vals[this.key] = this.val;
