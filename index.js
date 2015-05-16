@@ -164,9 +164,18 @@ Validator.prototype.isString = function(tip) {
 
 // Converts value to integer, throwing if it fails
 Validator.prototype.toInt = function(tip) {
-  if (!validator.isInt(this.val))
+  if (!validator.isInt(this.val)) {
     this.throwError(tip || util.format('%s must be an integer', this.key));
-  this.vals[this.key] = this.val = parseInt(this.val, 10);
+  }
+
+  var num = Number.parseInt(this.val, 10);
+
+  // ES6 introduces {MIN,MAX}_SAFE_INTEGER
+  if (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER) {
+    this.throwError(util.format('%s is out of integer range', this.key));
+  }
+
+  this.vals[this.key] = this.val = num;
   return this;
 };
 
