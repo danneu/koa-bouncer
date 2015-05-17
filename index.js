@@ -6,6 +6,12 @@ var debug = require('debug')('koa-bouncer');
 var assert = require('better-assert');
 var validator = require('validator');
 
+// Number -> Bool
+// ES6 introduces {MIN,MAX}_SAFE_INTEGER
+var isSafeInteger = function(n) {
+  return Number.MIN_SAFE_INTEGER <= n && n <= Number.MAX_SAFE_INTEGER;
+};
+
 function ValidationError(key, message) {
   this.name = 'ValidationError';
   this.message = message;
@@ -170,9 +176,8 @@ Validator.prototype.toInt = function(tip) {
 
   var num = Number.parseInt(this.val, 10);
 
-  // ES6 introduces {MIN,MAX}_SAFE_INTEGER
-  if (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER) {
-    this.throwError(util.format('%s is out of integer range', this.key));
+  if (!isSafeInteger(n)) {
+    this.throwError(tip || util.format('%s is out of integer range', this.key));
   }
 
   this.vals[this.key] = this.val = num;
@@ -181,8 +186,14 @@ Validator.prototype.toInt = function(tip) {
 
 // Checks if is already an integer (and type number), throws if its not
 Validator.prototype.isInt = function(tip) {
-  if (!Number.isInteger(this.val))
+  if (!Number.isInteger(this.val)) {
     this.throwError(tip || util.format('%s must be an integer', this.key));
+  }
+
+  if (!isSafeInteger(this.val)) {
+    this.throwError(tip || util.format('%s is out of integer range', this.key));
+  }
+
   this.vals[this.key] = this.val;
   return this;
 };
