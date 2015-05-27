@@ -147,7 +147,7 @@ Validator.prototype.isLength = function(min, max, tip) {
 
 // If value is undefined, set it to given value or to the value
 // returned by a function.
-Validator.prototype.default = function(valueOrFunction) {
+Validator.prototype.defaultTo = function(valueOrFunction) {
   var val = this.val;
   if (_.isUndefined(this.val))
     if (_.isFunction(valueOrFunction))
@@ -159,6 +159,9 @@ Validator.prototype.default = function(valueOrFunction) {
   this.vals[this.key] = this.val = val;
   return this;
 };
+
+// Deprecated alias since `default` is reserved word
+Validator.prototype.default = Validator.prototype.defaultTo;
 
 Validator.prototype.isString = function(tip) {
   if (!_.isString(this.val)) {
