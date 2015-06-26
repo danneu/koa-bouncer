@@ -179,7 +179,7 @@ Validator.prototype.toInt = function(tip) {
 
   var num = Number.parseInt(this.val, 10);
 
-  if (!isSafeInteger(n)) {
+  if (!isSafeInteger(num)) {
     this.throwError(tip || util.format('%s is out of integer range', this.key));
   }
 
@@ -331,8 +331,9 @@ Validator.prototype.checkNot = function(result, tip) {
 };
 
 Validator.prototype.fromJson = function(tip) {
+  var parsedObj;
   try {
-    var parsedObj = JSON.parse(this.val);
+    parsedObj = JSON.parse(this.val);
   } catch(ex) {
     this.throwError(tip || 'Invalid JSON for ' + this.key);
   }
