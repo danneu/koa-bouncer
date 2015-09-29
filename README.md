@@ -72,7 +72,7 @@ app.use(route.post('/users', function*() {
   var user = yield db.insertUser({
     uname: this.vals.uname,
     email: this.vals.email,
-    password: this.vals.password
+    password: this.vals.password1
   });
 
   this.redirect('/users/' + user.id);
