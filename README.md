@@ -64,6 +64,12 @@ app.use(route.post('/users', function*() {
     .tap(s => s.trim())
     .checkPred(p2 => p2 === this.vals.password1, 'Passwords must match');
 
+  // You can add more validation assertions to params later on in the 
+  // route. In the case of the username, we only want to incur a
+  // database lookup at the end of the validation.
+  this.validateBody('uname')
+    .check(yield db.findUserByUname(this.vals.uname), 'Username taken');
+
   // If we got this far, then validation succeeded.
 
   // We can see the validated/transformed params:
