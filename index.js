@@ -406,7 +406,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: val !== undefined ? val : (self.vals[key] == undefined ?  self.vals[key] : self.query[key]),
+        val: val !== undefined ? val : (self.vals[key] !== undefined ?  self.vals[key] : self.query[key]),
         vals: self.vals,
         type: 'query'
       });
