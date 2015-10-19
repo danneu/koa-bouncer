@@ -393,7 +393,7 @@ exports.middleware = function middleware() {
     var self = this;
     this.vals = {};
 
-    this.validateParam = function(key) {
+    this.validateParam = function(key, val) {
       return new Validator({
         ctx: self,
         key: key,
@@ -402,7 +402,7 @@ exports.middleware = function middleware() {
         type: 'param'
       });
     };
-    this.validateQuery = function(key) {
+    this.validateQuery = function(key, val) {
       return new Validator({
         ctx: self,
         key: key,
