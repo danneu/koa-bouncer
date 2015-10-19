@@ -393,29 +393,29 @@ exports.middleware = function middleware() {
     var self = this;
     this.vals = {};
 
-    this.validateParam = function(key) {
+    this.validateParam = function(key, val) {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] === undefined ? self.params[key] : self.vals[key],
+        val: val !== undefined ? val : (self.vals[key] !== undefined ? self.vals[key] : self.params[key]),
         vals: self.vals,
         type: 'param'
       });
     };
-    this.validateQuery = function(key) {
+    this.validateQuery = function(key, val) {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] === undefined ? self.query[key] : self.vals[key],
+        val: val !== undefined ? val : (self.vals[key] !== undefined ?  self.vals[key] : self.query[key]),
         vals: self.vals,
         type: 'query'
       });
     };
-    this.validateBody = function(key) {
+    this.validateBody = function(key, val) {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] === undefined ? self.request.body[key] : self.vals[key],
+        val: val !== undefined ? val : (self.vals[key] !== undefined ? self.vals[key] : self.request.body[key]),
         vals: self.vals,
         type: 'body'
       });
