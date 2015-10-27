@@ -72,7 +72,7 @@ app.use(route.post('/users', function*() {
     .tap(s => s.trim())
     .checkPred(p2 => p2 === this.vals.password1, 'Passwords must match');
 
-  // You can add more validation assertions to params later on in the 
+  // You can add more validation assertions to params later on in the
   // route. In the case of the username, we only want to incur a
   // database lookup at the end of the validation.
   this.validateBody('uname')
@@ -96,7 +96,7 @@ app.use(route.post('/users', function*() {
 ### Telling bouncer where to find request parameters
 
 By default, koa-bouncer assumes that it will find query params (?foo=42),
-route params (`router.get('/users/:id', ...)`), and body params in 
+route params (`router.get('/users/:id', ...)`), and body params in
 `ctx.query`, `ctx.params`, and `ctx.request.body` respectively.
 
 You can override these assumptions by passing in your own getter functions
@@ -112,6 +112,88 @@ app.use(bouncer.middleware({
   getQuery: function(ctx) { return ctx.query; },
   getBody: function(ctx) { return ctx.request.body; }
 }));
+```
+
+### Custom Validator methods
+
+koa-bouncer comes with Validator methods that are frequently useful when
+validating user input.
+
+You can also define your own Validator methods to DRY up common logic.
+
+For example, maybe you want to define '.isValidBitcoinAddress' such that
+you can write code like this:
+
+```
+this.validateBody('address')
+  .notEmpty()
+  .isValidBitcoinAddress();
+```
+
+You can implement `.isValidBitcoinAddress` by attaching it to
+bouncer.Validator's prototype. You could define a file `custom_validators.js`
+that mutates Validator's prototype and then ensure the file it evaluated
+before your middleware/routes by `require`ing it.
+
+For quick reference, here is how the built-in `.isString` method is
+implemented:
+
+```
+Validator.prototype.isString = function(tip) {
+  if (!_.isString(this.val)) {
+    this.throwError(tip || util.format('%s must be a string', this.key));
+  }
+  this.vals[this.key] = this.val;
+  return this;
+};
+```
+
+Basically, when you call `this.validateBody('address')` in a route,
+it instantiates a new Validator instance and puts the value of the
+'address' body param into the Koa context `this.vals['address']`.
+
+The job of Validator methods are to then transform the value of
+`this.vals['address']` and/or make assertions about it, throwing a
+`bouncer.ValidationError` when the current value is forbidden.
+
+Within a Validator method,
+
+- `this` is the current Validator instance
+- `this.vals` is always an object that's keyed by query/param/body parameter
+names
+- `this.key` is the name of the parameter that the current Validator
+instance was created to validate. `this.key` will be 'address' in the
+example `this.validateBody('address')`, thus you can access the current
+value so far via `this.vals[this.key]`.
+- `this.throwError` is used to throw a ValidatorError. The convention is for
+Validator methods to take an optional `tip` string argument to allow
+the callsite (a route) to provide a custom user-facing error message
+if the assertion fails.
+
+Remember to always update `this.vals[this.key]` and `this.val` with any
+transformations you make to the value, if any.
+
+Also remember to `return this` so that more methods can be chained.
+
+Here's an example of how `.isValidBitcoinAddress` could be implemented:
+
+``` javascript
+var Validator = require('koa-bouncer').Validator;
+
+Validator.prototype.isValidBitcoinAddress = function(tip) {
+  // Will thread the tip through the nested assertions
+  var tip = tip || 'Invalid Bitcoin address';
+
+  this
+    .isString(tip)
+    .tap(s => s.trim())
+    // Must be alphanumeric from start to finish
+    .match(/^[a-z0-9]+$/i, tip)
+    // But must not contain any of these chars
+    .notMatch(/[0O1l]/, tip);
+
+  return this;
+};
 ```
 
 ## License
