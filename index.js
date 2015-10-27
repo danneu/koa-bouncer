@@ -1,9 +1,9 @@
+'use strict';
 // Node
 var util = require('util');
 // 3rd party
 var _ = require('lodash');
 var debug = require('debug')('koa-bouncer');
-var assert = require('better-assert');
 var validator = require('validator');
 
 // Number -> Bool
@@ -217,7 +217,7 @@ Validator.prototype.isUuid = function(tip) {
 };
 
 // If value is not already an array, puts it in a singleton array
-Validator.prototype.toArray = function(tip) {
+Validator.prototype.toArray = function(_) {
   this.val = _.isUndefined(this.val) ? [] : this.val;
   this.val = (_.isArray(this.val) ? this.val : [this.val]);
   this.vals[this.key] = this.val;
@@ -239,7 +239,7 @@ Validator.prototype.toInts = function(tip) {
 };
 
 // Converts value to array if necessary, then de-dupes it
-Validator.prototype.uniq = function(tip) {
+Validator.prototype.uniq = function(_) {
   this.toArray();
   this.vals[this.key] = this.val = _.uniq(this.val);
   return this;
@@ -323,7 +323,7 @@ Validator.prototype.check = function(result, tip) {
 };
 
 Validator.prototype.checkNot = function(result, tip) {
-  if (!!result)
+  if (result)
     this.throwError(tip);
 
   this.vals[this.key] = this.val;
@@ -433,7 +433,7 @@ exports.middleware = function middleware(opts) {
         throw new ValidationError(null, tip);
     };
     this.validateNot = this.checkNot = function(result, tip) {
-      if (!!result)
+      if (result)
         throw new ValidationError(null, tip);
     };
     yield next;
