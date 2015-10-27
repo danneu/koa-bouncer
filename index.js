@@ -387,7 +387,15 @@ exports.ValidationError = ValidationError;
 
 exports.Validator = Validator;
 
-exports.middleware = function middleware() {
+exports.middleware = function middleware(opts) {
+  opts = opts || {};
+
+  // default ctx getters that user can override
+  // they should take the Koa context and return an object
+  opts.getParams = opts.getParams || function(ctx) { return ctx.params; };
+  opts.getQuery = opts.getQuery || function(ctx) { return ctx.query; };
+  opts.getBody = opts.getBody || function(ctx) { return ctx.request.body; };
+
   return function*(next) {
     debug('Initializing koa-bouncer');
     var self = this;
@@ -397,7 +405,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] === undefined ? self.params[key] : self.vals[key],
+        val: self.vals[key] === undefined ? opts.getParams(self)[key] : self.vals[key],
         vals: self.vals,
         type: 'param'
       });
@@ -406,7 +414,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] === undefined ? self.query[key] : self.vals[key],
+        val: self.vals[key] === undefined ? opts.getQuery(self)[key] : self.vals[key],
         vals: self.vals,
         type: 'query'
       });
@@ -415,7 +423,7 @@ exports.middleware = function middleware() {
       return new Validator({
         ctx: self,
         key: key,
-        val: self.vals[key] === undefined ? self.request.body[key] : self.vals[key],
+        val: self.vals[key] === undefined ? opts.getBody(self)[key] : self.vals[key],
         vals: self.vals,
         type: 'body'
       });

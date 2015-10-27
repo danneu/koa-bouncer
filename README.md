@@ -85,6 +85,27 @@ app.use(route.post('/users', function*() {
 }));
 ```
 
+### Telling bouncer where to find request parameters
+
+By default, koa-bouncer assumes that it will find query params (?foo=42),
+route params (`router.get('/users/:id', ...)`), and body params in 
+`ctx.query`, `ctx.params`, and `ctx.request.body` respectively.
+
+You can override these assumptions by passing in your own getter functions
+to `bouncer.middleware(opts)`.
+
+Each function must take the Koa context as its argument and return an object.
+
+For example, here's how the default functions are defined:
+
+``` javascript
+app.use(bouncer.middleware({
+  getParams: function(ctx) { return ctx.params; },
+  getQuery: function(ctx) { return ctx.query; },
+  getBody: function(ctx) { return ctx.request.body; }
+}));
+```
+
 ## License
 
 MIT
