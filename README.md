@@ -20,11 +20,19 @@ app.use(bouncer.middleware());
 
 // Add middleware that handles koa-bouncer's ValidationError
 // (subtype of native Error) when downstream middleware/routes throw it.
+//
+// In this example, we set an error flash message to the validation error
+// (e.g. 'Username taken'), save the user's progress for body params,
+// and redirect back to the form they came from.
 app.use(function*(next) {
   try {
     yield *next;
   } catch(err) {
     if (err instanceof bouncer.ValidationError) {
+      this.flash = {
+        message: ['danger', err.bouncer.message],
+        params: this.request.body
+      };
       this.redirect('back');
       return;
     }
