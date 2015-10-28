@@ -1,10 +1,9 @@
 'use strict';
-var request = require('supertest');
-var koa = require('koa');
-var assert = require('chai').assert;
-var bouncer = require('../index.js');
-var _ = require('lodash');
-var v = require('validator');
+const request = require('supertest');
+const koa = require('koa');
+const assert = require('chai').assert;
+const bouncer = require('../index.js');
+const _ = require('lodash');
 
 // returns 418 response if it catches a ValidationError
 // for easy supertest testing
@@ -61,7 +60,7 @@ describe('Validator#checkPred', () => {
       this.validateQuery('test').checkPred(_.isArray);
     });
     request(app.listen()).get('/?test=a&test=b').expect(200).end(done);
-  })
+  });
 });
 
 describe('Validator#checkPred', () => {
@@ -71,7 +70,7 @@ describe('Validator#checkPred', () => {
       this.validateQuery('test').checkNotPred(_.isArray);
     });
     request(app.listen()).get('/?test=a').expect(200).end(done);
-  })
+  });
 });
 
 ////////////////////////////////////////////////////////////
@@ -170,7 +169,7 @@ describe('Validation#tap', () => {
   it('allows arbitrary value change', done => {
     const app = makeApp();
     app.use(function*() {
-      this.validateQuery('test').tap(_ => 'bar');
+      this.validateQuery('test').tap(() => 'bar');
       this.body = this.vals.test;
     });
     request(app.listen())
@@ -187,7 +186,7 @@ describe('Parameter getter override', () => {
   describe('Validation#getParams', () => {
     it('allows override', done => {
       const app = makeApp({
-        getParams: ctx => {
+        getParams: () => {
           return { test: 'aaa' };
         }
       });
@@ -202,7 +201,7 @@ describe('Parameter getter override', () => {
   describe('Validation#getQuery', () => {
     it('allows override', done => {
       const app = makeApp({
-        getQuery: ctx => {
+        getQuery: () => {
           return { test: 'bbb' };
         }
       });
@@ -217,7 +216,7 @@ describe('Parameter getter override', () => {
   describe('Validation#getBody', () => {
     it('allows override', done => {
       const app = makeApp({
-        getBody: ctx => {
+        getBody: () => {
           return { test: 'ccc' };
         }
       });
@@ -607,7 +606,7 @@ describe('Validator#toInt', () => {
   it('passes when val parses fully into integer', done => {
     const app = makeApp();
     app.use(function*() {
-      this.vals.test = '5'
+      this.vals.test = '5';
       this.validateQuery('test').toInt();
       this.body = this.vals.test.toString();
     });
@@ -621,7 +620,7 @@ describe('Validator#toInt', () => {
   it('throws ValidationError if val has extraneous non-integer chars', done => {
     const app = makeApp();
     app.use(function*() {
-      this.vals.test = '5.67abc'
+      this.vals.test = '5.67abc';
       this.validateQuery('test').toInt();
     });
     request(app.listen())
@@ -633,7 +632,7 @@ describe('Validator#toInt', () => {
   it('throws ValidationError if val cannot parse into an integer', done => {
     const app = makeApp();
     app.use(function*() {
-      this.vals.test = 'abc'
+      this.vals.test = 'abc';
       this.validateQuery('test').toInt();
     });
     request(app.listen())
@@ -1060,6 +1059,29 @@ describe('general sanity checks', () => {
       .expect('[5]')
       .end(done);
   });
+
+  it('works with optional()', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      this.validateQuery('test')
+        .optional()
+        .fromJson()
+        .tap(x => x.foo)
+        .tap(x => '5' + x)
+        .tap(x => Number.parseInt(x, 10))
+        .toArray()
+        .toInts();
+
+      this.body = String(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('undefined')
+      .end(done);
+  });
 });
 
 ////////////////////////////////////////////////////////////
@@ -1094,5 +1116,70 @@ describe('multiple Validator chains', () => {
       .expect(200)
       .expect('2')
       .end(done);
-  })
+  });
+});
+
+////////////////////////////////////////////////////////////
+
+describe('Validator#optional' ,() => {
+  it('short-circuits when val is undefined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
+
+  it('continues when val is defined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 42;
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  // random non-general checks
+
+  it('short-circuits isIn when val is undefined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      this.validateQuery('test')
+        .optional()
+        .isIn(['this', 'would normally', 'fail']);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
+
+  it('short-circuits eq when val is undefined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      this.validateQuery('test')
+        .optional()
+        .eq(42);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
 });

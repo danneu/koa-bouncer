@@ -54,13 +54,11 @@ app.use(route.post('/users', function*() {
     .isString()
     .tap(s => s.trim());
 
-  // Email is optional
-  if (this.request.body.email) {
-    this.validateBody('email')
-      .isString()
-      .tap(s => s.trim())
-      .checkPred(v.isEmail, 'Invalid email format');
-  }
+  this.validateBody('email')  // email is optional
+    .optional()
+    .isString()
+    .tap(s => s.trim())
+    .checkPred(v.isEmail, 'Invalid email format');
 
   this.validateBody('password1')
     .required('Password required')
@@ -133,15 +131,16 @@ this.validateBody('address')
 ```
 
 You can implement `.isValidBitcoinAddress` by attaching it to
-bouncer.Validator's prototype. You could define a file `custom_validators.js`
-that mutates Validator's prototype and then ensure the file it evaluated
-before your middleware/routes by `require`ing it.
+bouncer.Validator's prototype via the `Validator.addMethod(name, fn)` method.
+You could define a file `custom_validators.js` that adds methods to the
+Validator and then ensure the file it evaluated before your 
+middleware/routes by `require`ing it.
 
 For quick reference, here is how the built-in `.isString` method is
 implemented:
 
 ``` javascript
-Validator.prototype.isString = function(tip) {
+Validator.addMethod('isString', function(tip) {
   if (!_.isString(this.val)) {
     this.throwError(tip || util.format('%s must be a string', this.key));
   }
@@ -184,7 +183,7 @@ Here's an example of how `.isValidBitcoinAddress` could be implemented:
 ``` javascript
 var Validator = require('koa-bouncer').Validator;
 
-Validator.prototype.isValidBitcoinAddress = function(tip) {
+Validator.addMethod('isValidBitcoinAddress', function(tip) {
   // Will thread the tip through the nested assertions
   var tip = tip || 'Invalid Bitcoin address';
 
@@ -197,7 +196,7 @@ Validator.prototype.isValidBitcoinAddress = function(tip) {
     .notMatch(/[0O1l]/, tip);
 
   return this;
-};
+});
 ```
 
 ## License
