@@ -126,7 +126,7 @@ You can also define your own Validator methods to DRY up common logic.
 For example, maybe you want to define '.isValidBitcoinAddress' such that
 you can write code like this:
 
-```
+``` javascript
 this.validateBody('address')
   .notEmpty()
   .isValidBitcoinAddress();
@@ -140,12 +140,12 @@ before your middleware/routes by `require`ing it.
 For quick reference, here is how the built-in `.isString` method is
 implemented:
 
-```
+``` javascript
 Validator.prototype.isString = function(tip) {
   if (!_.isString(this.val)) {
     this.throwError(tip || util.format('%s must be a string', this.key));
   }
-  this.vals[this.key] = this.val;
+
   return this;
 };
 ```
@@ -173,7 +173,9 @@ the callsite (a route) to provide a custom user-facing error message
 if the assertion fails.
 
 Remember to always update `this.vals[this.key]` and `this.val` with any
-transformations you make to the value, if any.
+transformations you make to the value, if any. **TODO**: It's a bit clunky
+having to remember to assign both `this.vals[this.key]` and `this.val` 
+per transformation.
 
 Also remember to `return this` so that more methods can be chained.
 
