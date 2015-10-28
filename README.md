@@ -1,8 +1,12 @@
-(Warning: work in progress, rapid churn)
-
 <img src="bouncer-beagle.png" align="right" height="256" hspace="5px">
 
 # koa-bouncer
+
+[![Build Status](https://travis-ci.org/danneu/koa-bouncer.svg?branch=master)](https://travis-ci.org/danneu/koa-bouncer)
+[![NPM version](https://badge.fury.io/js/koa-bouncer.svg)](http://badge.fury.io/js/koa-bouncer)
+[![Dependency Status](https://david-dm.org/danneu/koa-bouncer.svg)](https://david-dm.org/danneu/koa-bouncer)
+
+[![NPM](https://nodei.co/npm/koa-bouncer.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/koa-bouncer/)
 
 An http parameter validation library for [Koa](http://koajs.com) web apps.
 
