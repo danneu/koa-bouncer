@@ -55,24 +55,22 @@ app.use(route.post('/users', function*() {
   this.validateBody('uname')
     .required('Username required')
     .isString()
-    .tap(s => s.trim());
+    .trim();
 
   this.validateBody('email')  // email is optional
     .optional()
     .isString()
-    .tap(s => s.trim())
+    .trim()
     .checkPred(v.isEmail, 'Invalid email format');
 
   this.validateBody('password1')
     .required('Password required')
     .isString()
-    .tap(s => s.trim())
     .isLength(6, 100, 'Password must be 6-100 chars');
 
   this.validateBody('password2')
     .required('Password confirmation required')
     .isString()
-    .tap(s => s.trim())
     .checkPred(p2 => p2 === this.vals.password1, 'Passwords must match');
 
   // You can add more validation assertions to params later on in the
