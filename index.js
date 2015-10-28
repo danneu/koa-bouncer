@@ -195,6 +195,10 @@ Validator.prototype.toInt = function(tip) {
 };
 
 // general isNumber check
+//
+// Note that there are difference betweent he global `isFinite` fn
+// and the new ES6 `Number.isFinite` fn.
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite
 Validator.prototype.isFiniteNumber = function(tip) {
   if (!Number.isFinite(this.val))
     this.throwError(tip || util.format('%s must be a number', this.key));

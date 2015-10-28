@@ -679,6 +679,19 @@ describe('Validator#isFiniteNumber', () => {
       .expect(418)
       .end(done);
   });
+
+  // ensure it doesn't behave like the old global isFinite impl
+  it('throws ValidationError if val is null', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = null;
+      this.validateQuery('test').isFiniteNumber();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
 });
 
 
