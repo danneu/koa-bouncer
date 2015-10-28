@@ -12,6 +12,8 @@ An http parameter validation library for [Koa](http://koajs.com) web apps.
 ``` javascript
 var bouncer = require('koa-bouncer');
 var route = require('koa-route');
+// collection of general string validation predicates
+var v = require('validator');
 
 // Add koa-bouncer's methods/behavior to Koa's `this` context
 // Just ensure this middleware runs before any routes that use koa-bouncer's
@@ -48,7 +50,7 @@ app.use(route.post('/users', function*() {
   // - Populates the `this.vals` object for use in the remainder of the route
 
   this.validateBody('uname')
-    .notEmpty('Username required')
+    .required('Username required')
     .isString()
     .tap(s => s.trim());
 
@@ -57,17 +59,17 @@ app.use(route.post('/users', function*() {
     this.validateBody('email')
       .isString()
       .tap(s => s.trim())
-      .isEmail();
+      .checkPred(v.isEmail, 'Invalid email format');
   }
 
   this.validateBody('password1')
-    .notEmpty('Password required')
+    .required('Password required')
     .isString()
     .tap(s => s.trim())
     .isLength(6, 100, 'Password must be 6-100 chars');
 
   this.validateBody('password2')
-    .notEmpty('Password confirmation required')
+    .required('Password confirmation required')
     .isString()
     .tap(s => s.trim())
     .checkPred(p2 => p2 === this.vals.password1, 'Passwords must match');
