@@ -27,7 +27,11 @@
     "validator": "^3.33.0"
   },
   "devDependencies": {
+    "chai": "^3.4.0",
     "eslint": "^1.7.3",
-    "eslint-config-volox": "^1.0.2"
+    "eslint-config-volox": "^1.0.2",
+    "koa": "^1.1.1",
+    "mocha": "^2.3.3",
+    "supertest": "^1.1.0"
   }
 }
