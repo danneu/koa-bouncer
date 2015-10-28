@@ -14,54 +14,26 @@ An http parameter validation library for [Koa](http://koajs.com) web apps.
 
 <br style="clear: both;">
 
-## Usage
+## Example
 
 ``` javascript
 var bouncer = require('koa-bouncer');
-var route = require('koa-route');
-// collection of general string validation predicates
-var v = require('validator');
+var app = require('koa')();
 
-// Add koa-bouncer's methods/behavior to Koa's `this` context
-// Just ensure this middleware runs before any routes that use koa-bouncer's
-// {validateBody,validateParam,validateQuery} methods.
+// extends the Koa context with some methods
 app.use(bouncer.middleware());
 
-// Add middleware that handles koa-bouncer's ValidationError
-// (subtype of native Error) when downstream middleware/routes throw it.
-//
-// In this example, we set an error flash message to the validation error
-// (e.g. 'Username taken'), save the user's progress for body params,
-// and redirect back to the form they came from.
-app.use(function*(next) {
-  try {
-    yield *next;
-  } catch(err) {
-    if (err instanceof bouncer.ValidationError) {
-      this.flash = {
-        message: ['danger', err.bouncer.message],
-        params: this.request.body
-      };
-      this.redirect('back');
-      return;
-    }
-    // but remember to re-throw other errors so they can be handled upstream
-    throw err;
-  }
-});
+// POST /users - create user endpoint
+app.post('/users', function*() {
 
-app.use(route.post('/users', function*() {
-
-  // Validation
-  // - Throws a bouncer.ValidationError if any assertions fail
-  // - Populates the `this.vals` object for use in the remainder of the route
+  // validate input
 
   this.validateBody('uname')
     .required('Username required')
     .isString()
     .trim();
 
-  this.validateBody('email')  // email is optional
+  this.validateBody('email')
     .optional()
     .isString()
     .trim()
@@ -77,15 +49,14 @@ app.use(route.post('/users', function*() {
     .isString()
     .checkPred(p2 => p2 === this.vals.password1, 'Passwords must match');
 
-  // You can add more validation assertions to params later on in the
-  // route. In the case of the username, we only want to incur a
-  // database lookup at the end of the validation.
+  // running database query last to give the other validations a chance to fail
   this.validateBody('uname')
     .check(yield db.findUserByUname(this.vals.uname), 'Username taken');
 
-  // If we got this far, then validation succeeded.
+  // if we get this far, then validation succeeded.
 
-  // We can see the validated/transformed params:
+  // the validation populates a `this.vals` object with validated values
+  //=> { uname: 'foo', password1: 'secret', password2: 'secret' }
   console.log(this.vals);
 
   var user = yield db.insertUser({
@@ -95,21 +66,128 @@ app.use(route.post('/users', function*() {
   });
 
   this.redirect('/users/' + user.id);
-}));
+});
 ```
 
-### Telling bouncer where to find request parameters
+## Usage
 
-By default, koa-bouncer assumes that it will find query params (?foo=42),
-route params (`router.get('/users/:id', ...)`), and body params in
-`ctx.query`, `ctx.params`, and `ctx.request.body` respectively.
+First, you need to inject bouncer's middleware:
 
-You can override these assumptions by passing in your own getter functions
-to `bouncer.middleware(opts)`.
+``` javascript
+bouncer.middleware(opts)
+```
 
-Each function must take the Koa context as its argument and return an object.
+This extends the Koa context with these methods for you to use in routes,
+the bulk of the koa-bouncer abstraction:
 
-For example, here's how the default functions are defined:
+- `this.validateParam(key)`
+- `this.validateQuery(key)`
+- `this.validateBody(key)`
+
+Each of these return a validator that targets the value in the url param,
+query param, or body param that you specified with 'key'.
+
+When you spawn a validator, it immediately populates `this.vals[key]` with
+the initial value of the parameter. You can then chain methods like
+`.toString().trim().isEmail()` to transform the value in `this.vals` and
+make assertions against it.
+
+Just by calling these methods, they will begin populating `this.vals`:
+
+``` javascript
+app.get('/search', function*() {
+  this.validateQuery('keyword');
+  this.validateQuery('sort');
+  this.body = JSON.stringify(this.vals);
+});
+```
+
+``` bash
+curl http://localhost:3000/search
+=> {}
+
+curl http://localhost:3000/search?sort=age
+=> { "sort": "age" }
+```
+
+We can use `.required()` to throw a ValidationError when the parameter is
+undefined. For example, we can decide that you must always supply a
+?keyword= to our search endpoint.
+
+And we can use `.optional()` to only run the chained validations/assertions
+if the parameter is undefined (not given by user).
+
+``` javascript
+app.get('/search', function*() {
+  this.validateQuery('keyword').required().isString().trim();
+  this.validateQuery('sort').toArray();
+  this.body = JSON.stringify(this.vals);
+});
+```
+
+``` bash
+curl http://localhost:3000/search
+=> Uncaught ValidationError
+
+curl http://localhost:3000/search?keyword=hello
+=> { "keyword": "hello", "sort": [] }
+
+curl http://localhost:3000/search?keyword=hello&sort=age
+=> { "keyword": "hello", "sort": ["age"] }
+
+curl http://localhost:3000/search?keyword=hello&sort=age&sort=height
+=> { "keyword": "hello", "sort": ["age", "height"] }
+```
+
+If a validation fails, then the validator throws a bouncer.ValidationError
+that we can catch with upstream middleware.
+
+For example, we can decide that upon validation error, we redirect the user
+back to whatever the previous page was and populate a temporary flash
+object with the error and their parameters so that we can repopulate the form.
+
+``` javascript
+app.use(function*(next) {
+  try {
+    yield* next;
+  } catch(err) {
+    if (err instanceof bouncer.ValidationError) {
+      this.flash = {
+        message: ['danger', err.message],
+        params: this.request.body
+      };
+      return this.redirect('back');
+    }
+    throw err;
+  }
+});
+
+app.post('/users', function*() {
+  this.validateBody('username')
+    .required('Username is required')
+    .isString()
+    .trim()
+    .isLength(3, 15, 'Username must be 3-15 chars');
+
+  var user = yield database.insertUser(this.vals.username);
+  this.body = 'You successfully registered';
+});
+```
+
+``` bash
+http --form POST localhost:3000/users
+=> 302 Redirect to GET /users, message='Username is required'
+
+http --form POST localhost:3000/users username=bo
+=> 302 Redirect to GET /users, message='Username must be 3-15 chars'
+
+http --form POST localhost:3000/users username=freeman
+=> 200 OK, You successfully registered
+```
+
+You can pass options into the `bouncer.middleware()` function.
+
+Here are the default ones:
 
 ``` javascript
 app.use(bouncer.middleware({
@@ -119,71 +197,11 @@ app.use(bouncer.middleware({
 }));
 ```
 
-### Custom Validator methods
+You can override these if the validators need to look in a different place
+to fetch the respective keys when calling the `validateParams`, `validateQuery`,
+and `validateBody` methods.
 
-koa-bouncer comes with Validator methods that are frequently useful when
-validating user input.
-
-You can also define your own Validator methods to DRY up common logic.
-
-For example, maybe you want to define '.isValidBitcoinAddress' such that
-you can write code like this:
-
-``` javascript
-this.validateBody('address')
-  .notEmpty()
-  .isValidBitcoinAddress();
-```
-
-You can implement `.isValidBitcoinAddress` by attaching it to
-bouncer.Validator's prototype via the `Validator.addMethod(name, fn)` method.
-You could define a file `custom_validators.js` that adds methods to the
-Validator and then ensure the file it evaluated before your 
-middleware/routes by `require`ing it.
-
-For quick reference, here is how the built-in `.isString` method is
-implemented:
-
-``` javascript
-Validator.addMethod('isString', function(tip) {
-  if (!_.isString(this.val)) {
-    this.throwError(tip || util.format('%s must be a string', this.key));
-  }
-
-  return this;
-};
-```
-
-Basically, when you call `this.validateBody('address')` in a route,
-it instantiates a new Validator instance and puts the value of the
-'address' body param into the Koa context `this.vals['address']`.
-
-The job of Validator methods are to then transform the value of
-`this.vals['address']` and/or make assertions about it, throwing a
-`bouncer.ValidationError` when the current value is forbidden.
-
-Within a Validator method,
-
-- `this` is the current Validator instance
-- `this.vals` is always an object that's keyed by query/param/body parameter
-names
-- `this.key` is the name of the parameter that the current Validator
-instance was created to validate. `this.key` will be 'address' in the
-example `this.validateBody('address')`, thus you can access the current
-value so far via `this.vals[this.key]`.
-- `this.throwError` is used to throw a ValidatorError. The convention is for
-Validator methods to take an optional `tip` string argument to allow
-the callsite (a route) to provide a custom user-facing error message
-if the assertion fails.
-
-Remember to always update `this.vals[this.key]` and `this.val` with any
-transformations you make to the value, if any. **TODO**: It's a bit clunky
-having to remember to assign both `this.vals[this.key]` and `this.val` 
-per transformation.
-
-Also remember to `return this` so that more methods can be chained.
-
-Here's an example of how `.isValidBitcoinAddress` could be implemented:
+You can always define custom validators via `Validator.addMethod`:
 
 ``` javascript
 var Validator = require('koa-bouncer').Validator;
@@ -203,6 +221,40 @@ Validator.addMethod('isValidBitcoinAddress', function(tip) {
   return this;
 });
 ```
+
+Maybe put that in a `custom_validations.js` file and remember to load it.
+
+Now you can use the custom validator method in a route or middleware:
+
+``` javascript
+this.validateBody('address')
+  .required()
+  .isValidBitcoinAddress();
+```
+
+These chains always return the underlying validator instance. You can access
+its value at any instant with `.val()`.
+
+``` javascript
+let validator = this.validateBody('address')
+  .required()
+  .isValidBitcoinAddress();
+
+console.log('current value of this.vals['address'] is', validator.val());
+```
+
+Here's how you'd write a validator method that transforms the underlying value:
+
+``` javascript
+Validator.addMethod('add10', function() {
+  this.vals[this.key] = this.val() + 10;
+  return this;
+});
+```
+
+In other words, just assign to `this.vals[this.key]` to update the object
+of validated params. And remember to return `this` so that you can continue
+chaining things on to the validator.
 
 ## License
 
