@@ -1082,6 +1082,36 @@ describe('general sanity checks', () => {
       .expect('undefined')
       .end(done);
   });
+
+  it('loses optional state if initialized with its this.vals defined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 'foo';
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('does not lose optional state if initialized with its this.vals undefined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
 });
 
 ////////////////////////////////////////////////////////////
@@ -1151,6 +1181,69 @@ describe('Validator#optional' ,() => {
       .end(done);
   });
 
+  it('optional state does not apply when defined later on', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+
+      this.vals.test = 42;
+
+      this.validateQuery('test')
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('optional state remains through validate* calls', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      const validatorStart = this.validateQuery('test')
+        .optional()
+        .check(false);
+
+      assert.isTrue(validatorStart.isOptional());
+
+      const validatorFinish = this.validateQuery('test');
+      assert.isTrue(validatorFinish.isOptional());
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
+
+  it('loses optional state when defined later on', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+
+      const validatorStart = this.validateQuery('test')
+        .optional()
+        .check(false);
+
+      assert.isTrue(validatorStart.isOptional());
+
+      this.vals.test = 42;
+
+      const validatorFinish = this.validateQuery('test');
+      assert.equal(validatorStart, validatorFinish);
+      assert.isFalse(validatorFinish.isOptional());
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
+
   // random non-general checks
 
   it('short-circuits isIn when val is undefined', done => {
@@ -1180,6 +1273,54 @@ describe('Validator#optional' ,() => {
     request(app.listen())
       .get('/')
       .expect(200)
+      .end(done);
+  });
+});
+
+////////////////////////////////////////////////////////////
+
+describe('Validator instantiation', () => {
+  it('only gets instantiated once', done => {
+    const app = makeApp();
+    app.use(function*() {
+      const v1 = this.validateQuery('test');
+      const v2 = this.validateQuery('test');
+      const v3 = this.validateQuery('other');
+      this.body = JSON.stringify([v1 === v2, v1 === v3]);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('[true,false]')
+      .end(done);
+  });
+
+  it('reads its starting val from existing ctx.vals', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 42;
+      const validator = this.validateQuery('test');
+      this.body = JSON.stringify(validator.val());
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('42')
+      .end(done);
+  });
+
+  it('does not have a stale val()', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 42;
+      const validator = this.validateQuery('test');
+      this.vals.test = 'foo';
+      this.body = JSON.stringify(validator.val());
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('"foo"')
       .end(done);
   });
 });
