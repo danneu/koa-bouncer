@@ -322,9 +322,6 @@ Validator.addMethod('toString', function() {
 
 // Converts value into a trimmed string
 // Always succeeds
-//
-// TODO: Do I need this? user can just .tap(s => s.trim())
-// but maybe just having it will remind people to trim user input?
 // TODO: Maybe write a collapseWhitespace() function that collapses
 // consecutive newlines/spaces spam
 Validator.addMethod('trim', function() {
