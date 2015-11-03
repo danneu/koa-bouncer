@@ -548,7 +548,6 @@ this.validateBody('num')
   .required()
   .toInt()
   .checkPred(n => n % 2 === 0, 'Your num must be divisible by two')
-this.validateBody('password2').required
 ```
 
 Example: Custom predicate function:
