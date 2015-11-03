@@ -514,6 +514,9 @@ Validator.addMethod('isUuid', function(version, tip) {
     all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i
   };
 
+  if (!_.isString(this.val()))
+    this.throwError(tip);
+
   if (!re[version].test(this.val()))
     this.throwError(tip);
 

@@ -1458,6 +1458,9 @@ describe('Validator#isHexColor', () => {
 
 describe('Validator#isUuid', () => {
   buildSimpleTests('isUuid', [
+    [undefined,  418, 'does not blow up if val is undefined'],
+    [42,         418, 'does not blow up if val is not string'],
+    [new Date(), 418, 'does not blow up if val is not string'],
     // v3
     ['00000000-0000-3000-0000-000000000000', 'v3', 200, 'recognizes v3'],
     ['00000000-0000-4000-0000-000000000000', 'v3', 418, 'recognizes non-v3'],
