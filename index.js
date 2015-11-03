@@ -5,7 +5,7 @@ const util = require('util');
 // 3rd party
 const _ = require('lodash');
 const debug = require('debug')('koa-bouncer');
-const validator = require('validator');
+const v = require('validator');
 const assert = require('better-assert');
 
 // Number -> Bool
@@ -228,7 +228,7 @@ Validator.addMethod('isInt', function(tip) {
 
 // Converts value to integer, throwing if it fails
 Validator.addMethod('toInt', function(tip) {
-  if (!validator.isInt(this.val())) {
+  if (!v.isInt(this.val())) {
     this.throwError(tip || util.format('%s must be an integer', this.key));
   }
 
@@ -273,7 +273,7 @@ Validator.addMethod('toArray', function() {
 Validator.addMethod('toInts', function(tip) {
   assert(_.isArray(this.val()));
 
-  if (!_.every(this.val(), validator.isInt)) {
+  if (!_.every(this.val(), v.isInt)) {
     this.throwError(tip || this.key + ' must be an array of integers');
   }
 
@@ -305,7 +305,7 @@ Validator.addMethod('toBoolean', function() {
 
 // Converts value to float, throwing if it fails
 Validator.addMethod('toFloat', function(tip) {
-  if (!validator.isFloat(this.val()))
+  if (!v.isFloat(this.val()))
     this.throwError(tip || this.key + ' must be a float');
   var result = parseFloat(this.val());
   this.vals[this.key] = result;
