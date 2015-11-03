@@ -256,6 +256,677 @@ In other words, just assign to `this.vals[this.key]` to update the object
 of validated params. And remember to return `this` so that you can continue
 chaining things on to the validator.
 
+## Validator methods
+
+###### `.required([tip])`
+
+Only fails if val is `undefined`. Required the user to at least provie
+
+``` javascript
+this.validateBody('username')
+  .required('Must provide username')
+```
+
+###### `.optional()`
+
+If val is `undefined` at this point, then skip over the rest of the methods.
+
+This is so that you can validate a val only if user provided one.
+
+``` javascript
+this.validateBody('email')
+  .optional()
+  .isEmail('Invalid email format') // Only called if this.request.body is `undefined`
+```
+
+``` javascript
+this.validateBody('email')
+  .tap(x => 'hello@example.com')
+  .optional()
+  .isEmail()  // Always called since we are ensuring that val is always defined
+```
+
+Mutating `this.vals` to define a val inside an optional validator will
+turn off the validator's `validator.isOptional()` flag.
+
+``` javascript
+this.validateBody('email').optional();
+this.vals.email = 'hello@example.com';
+this.validateBody('email').isEmail();  // This will run
+```
+
+You can see the optional state of a validator with its `.isOptional()` method:
+
+``` javascript
+const validator = this.validateBody('email').optional();
+console.log(validator.isOptional());  //=> true
+this.vals.email = 'hello@example.com';
+console.log(validator.isOptional());  //=> false
+validator.isEmail();  // This will run
+```
+
+###### `.isIn(array, [tip])`
+
+Ensure val is included in given array (=== comparison).
+
+``` javascript
+this.validateBody('role')
+  .required('Must provide a role')
+  .isIn(['banned', 'member', 'mod', 'admin'], 'Invalid role')
+```
+
+###### `.isNotIn(array, [tip])`
+
+Ensure val is not included in given array (=== comparison).
+
+``` javascript
+this.validateBody('favorite-fruit')
+  .isNotIn(['apple', 'pomegranate'], 'You cannot choose forbidden fruit')
+```
+
+###### `.defaultTo(defaultVal)`
+
+If val is `undefined`, set it to defaultVal.
+
+``` javascript
+this.validateBody('multiplier')
+  .defaultTo(1.0)
+  .toFloat('multiplier must be a valid number')
+```
+
+###### `.isString([tip])`
+
+Ensure val is a string.
+
+Note: Also works with strings created via `new String()` 
+where `typeof new String() === 'object'`.
+
+``` javascript
+this.validateBody('username')
+  .isString()
+```
+
+It's a good practice to always call one of the `.is*` methods since
+they add explicit clarity to the validation step.
+
+###### `.isArray([tip])`
+
+Ensure val is an Array.
+
+``` javascript
+this.validateQuery('recipients')
+  .isArray('recipients must be an array')
+```
+
+``` bash
+curl http://localhost:3000/?recipients=joey
+=> ValidationError
+
+curl http://localhost:3000/?recipients=joey&recipients=kate&recipients=max
+=> 200 OK, this.vals => ['joey', 'kate', 'max']
+```
+
+Note: The previous example can be improved with `.toArray`.
+
+``` javascript
+this.validateQuery('recipients')
+  .toArray()
+  .isArray('recipients must be an array')
+```
+
+``` bash
+curl http://localhost:3000/?recipients=joey
+=> 200 OK, this.vals.recipients => ['joey']
+
+curl http://localhost:3000/?recipients=joey&recipients=kate&recipients=max
+=> 200 OK, this.vals.recipients => ['joey', 'kate', 'max']
+```
+
+###### `.eq(otherVal::Number, [tip])`
+
+Ensures `val === otherVal`.
+
+``` javascript
+this.validateBody('house-edge')
+  .eq(0.01, 'House edge must be 1%')
+```
+
+###### `.gt(otherVal::Number, [tip])`
+
+Ensures `val > otherVal`.
+
+``` javascript
+this.validateBody('hp')
+  .gt(0, 'Player must have 1 or more hit points')
+```
+
+###### `.gte(otherVal::Number, [tip])`
+
+Ensures `val >= otherVal`.
+
+``` javascript
+this.validateBody('age')
+  .gte(18, 'Must be 18 or older')
+```
+
+###### `.lt(otherVal::Number, [tip])`
+
+Ensures `val < otherVal`.
+
+``` javascript
+this.validateBody('pet-count')
+  .lt(10, 'You must have fewer than 10 pets')
+```
+
+###### `.lte(otherVal::Number, [tip])`
+
+Ensures `val <= otherVal`.
+
+``` javascript
+this.validateBody('house-edge')
+  .lte(0.10, 'House edge cannot be higher than 10%')
+```
+
+###### `.isLength(min:Int, max:Int, [tip])`
+
+Ensure val is a number `min <= val <= max` (inclusive on both sides).
+
+``` javascript
+this.validateBody('username')
+  .required('Username required')
+  .isString()
+  .trim()
+  .isLength(3, 15, 'Username must be 3-15 chars long')
+```
+
+###### `.isInt([tip])`
+
+Ensures val is already an integer and that it is within integer range
+(`Number.MIN_SAFE_INTEGER <= val <= Number.MAX_SAFE_INTEGER`).
+
+``` javascript
+this.validateBody('age')
+  .isInt('Age must be an integer')
+```
+
+###### `.isFiniteNumber([tip])`
+
+Ensures that val is a number (float) but that it is not `Infinity`.
+
+Note: This uses `Number.isFinite(val)` internally. Rather, it does *not*
+use the global `isFinite(val)` function because `isFinite(val)` first
+parses the number before checking if it is finite. `isFinite('42') => true`.
+
+``` javascript
+this.validateBody('num')
+  .tap(n => Infinity)
+  .isFiniteNumber()  // will always fail
+```
+
+###### `.match(regexp::RegExp, [tip])`
+
+Ensures that val matches the given regular expression.
+
+You must ensure that val is a string.
+
+``` javascript
+this.validateBody('username')
+  .required('Username is required')
+  .isString()
+  .trim()
+  .match(/^[a-z0-9_-]+$/i, 'Username must only contain a-z, 0-9, underscore, and hyphen')
+```
+
+Note: Remember to start your pattern with `^` ("start of string") and 
+end your pattern with `$` ("end of string") if val is supposed to
+fully match the pattern.
+
+###### `.notMatch(regexp::RegExp, [tip])`
+
+Ensure that val does **not** match the given regexp.
+
+You must ensure that val is a string.
+
+Note: It is often useful to chain `.notMatch` after a `.match` to refine
+the validation.
+
+``` javascript
+this.validateBody('username')
+  .required('Username is required')
+  .isString()
+  .trim()
+  .match(/^[a-z0-9_-]+$/i, 'Username must only contain a-z, 0-9, underscore, and hyphen')
+  .notMatch(/admin/i, 'Username must not contain the word "admin" anywhere in it')
+  .notMatch(/_{2,}/, 'Username must not contain consecutive underscores')
+  .notMatch(/-{2,}/, 'Username must not contain consecutive hyphens')
+```
+
+###### `.check(result, [tip])` and `.checkNot(result, [tip])`
+
+Unlike most of the other validator methods, `.check` and `.checkNot` do not
+every look at the current val. They only look at the truthy/falseyness of
+the `result` you pass into them.
+
+- `.check(result, [tip])` passes if `result` is truthy.
+- `.checkNot(result, [tip])` passes if `result` is falsey.
+
+They are a general-purpose tool for short-circuiting a validation, often
+based on some external condition.
+
+Example: Ensure username is not taken:
+
+``` javascript
+this.validateBody('username')
+  .required('Username required')
+  .isString()
+  .trim()
+  .checkNot(yield database.findUserByUsername(this.vals.uname), 'Username taken')
+```
+
+Example: Ensure that the email system is online only if they provide an email:
+
+``` javascript
+this.validateBody('email')
+  .optional()
+  .check(config.EMAIL_SYSTEM_ONLINE, 'Email system not ready, please try later')
+```
+
+###### `.checkPred(fn, [tip])` and `.checkPredNot(fn, [tip])`
+
+Pipes val into given `fn` and checks the result.
+
+- `.checkPred(fn, [tip])` ensures that `fn(val)` returns truthy.
+- `.checkPredNot(fn, [tip])` ensures that `fn(val)` returns falsey.
+
+These methods are general-purpose tools that let you make your own
+arbitrary assertions on the val.
+
+Example: Ad-hoc predicate function:
+
+``` javascript
+this.validateBody('num')
+  .required()
+  .toInt()
+  .checkPred(n => n % 2 === 0, 'Your num must be divisible by two')
+this.validateBody('password2').required
+```
+
+Example: Custom predicate function:
+
+``` javascript
+function isValidBitcoinAddress(addr) {
+  // ...
+}
+
+this.validateBody('bitcoin-address')
+  .required('Bitcoin address required')
+  .isString()
+  .trim()
+  .checkPred(isValidBitcoinAddress, 'Invalid bitcoin address')
+```
+
+###### `.isAlpha([tip])`
+
+Ensures that val is a string that contains only letters a-z (case insensitive).
+
+``` javascript
+this.validateBody('username')
+  .required()
+  .isString()
+  .trim()
+  .isAlpha()
+```
+
+###### `.isAlphanumeric([tip])`
+
+Ensures that val is a string that contains only letters a-z (case insensitive) 
+and numbers 0-9.
+
+``` javascript
+this.validateBody('username')
+  .required()
+  .isString()
+  .trim()
+  .isAlphanumeric()
+```
+
+###### `.isNumeric([tip])`
+
+Ensures that val is a string that contains only numbers 0-9.
+
+``` javascript
+this.validateBody('serial-number')
+  .required()
+  .isString()
+  .trim()
+  .isNumeric()
+```
+
+###### `.isAscii([tip])`
+
+Ensures that val is a string that contains only 
+ASCII characters (https://es.wikipedia.org/wiki/ASCII).
+
+In other words, val must only contain these characters:
+
+    ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+    @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \ ] ^ _
+    ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~  
+
+``` javascript
+this.validateBody('command')
+  .required()
+  .isString()
+  .trim()
+  .isAscii()
+```
+
+###### `.isBase64([tip])`
+
+Ensures that val is a base64-encoded string.
+
+Note: An empty string (`""`) is considered valid.
+
+``` javascript
+this.validateBody('data')
+  .required()
+  .isString()
+  .trim()
+  .isBase64()
+```
+
+###### `.isEmail([tip])`
+
+Ensures that val is a valid string email address.
+
+``` javascript
+this.validateBody('email')
+  .optional()
+  .isString()
+  .trim()
+  .isEmail()
+```
+
+###### `.isHexColor([tip])`
+
+Ensures that val is a hex color string.
+
+Accepts both 6-digit and 3-digit hex colors 
+with and without a leading '#' char.
+
+These are all valid: `'#333333'`, `'#333'`, `333333`, `333`.
+
+``` javascript
+this.validateBody('background-color')
+  .required()
+  .isString()
+  .trim()
+  .isHexColor()
+  .tap(x => x.startsWith('#') ? x : '#' + x)
+```
+
+###### `.isUuid([version::String], [tip])`
+
+Ensure that val is a valid uuid string.
+
+`version` can be one of `'v3'`, `'v4'`, `'v5'`, `'all'`. default is `'all'`.
+
+koa-bouncer can handle any of these:
+
+    .isUuid('v4', 'must be uuid v4');
+    .isUuid('must be any uuid');
+    .isUuid('v4');
+    .isUuid();
+
+``` javascript
+router.get('/things/:uuid', function*() {
+  this.validateParam('id')
+    .isUuid('v3')
+
+  const thing = yield database.findThing(this.vals.id);
+});
+```
+
+###### `.isJson([tip])`
+
+Ensures that val is a valid, well-formed JSON string.
+
+Works by simply wrapping `JSON.parse(val)` with a try/catch.
+
+``` javascript
+this.validateBody('data')
+  .isJson()
+```
+
+------------------------------------------------------------
+
+### Methods that convert/mutate the val
+
+###### `.toArray()`
+
+Converts val to an array if it is not already an array.
+
+If val is not already an array, then it puts it into an array of one item.
+
+If val is undefined, then sets it to empty array `[]`.
+
+``` javascript
+this.validateQuery('friends')
+  .toArray()
+  .isArray()  // Always succeeds
+```
+
+``` bash
+curl http://localhost:3000/
+// 200 OK, this.vals.friends => []
+
+curl http://localhost:3000/?friends=joey
+// 200 OK, this.vals.friends => ['joey']
+
+curl http://localhost:3000/?friends=joey&friends=kate
+// 200 OK, this.vals.friends => ['joey', 'kate']
+```
+
+###### `.toInt([tip])`
+
+Parses and converts val into an integer.
+
+Fails if val cannot be parsed into an integer or if it is out of
+safe integer range.
+
+Uses `parseInt(val, 10)`, so note that decimals and extraneous characters
+will be truncated off the end of the value.
+
+``` javascript
+this.validateQuery('age')
+  .required('Must provide your age')
+  .toInt('Invalid age')
+```
+
+``` bash
+curl http://localhost:3000/?age=42
+// 200 OK, this.vals.age => 42
+
+curl http://localhost:3000/?age=-42
+// 200 OK, this.vals.age => -42 (parses negative integer)
+
+curl http://localhost:3000/?age=42.123
+// 200 OK, this.vals.age => 42 (truncation)
+
+curl http://localhost:3000/?age=42abc
+// 200 OK, this.vals.age => 42 (truncation)
+
+curl http://localhost:3000/?age=9007199254740992
+// ValidationError (out of integer range)
+```
+
+###### `.toInts([tip])`
+
+Converts each string in val into an integer.
+
+If val is undefined, sets it to empty array `[]`.
+
+Fails if any item cannot be parsed into an integer or if any parse into
+integers that are out of safe integer range.
+
+``` javascript
+this.validateQuery('guesses')
+  .toInts('One of your guesses was invalid')
+```
+
+``` bash
+curl http://localhost:3000/
+// 200 OK, this.vals.guesses => []
+
+curl http://localhost:3000/?guesses=42
+// 200 OK, this.vals.guesses => [42]
+
+curl http://localhost:3000/?guesses=42&guesses=100
+// 200 OK, this.vals.guesses => [42, 100]
+
+curl http://localhost:3000/?guesses=42&guesses=100&guesses=9007199254740992
+// ValidationError (out of safe integer range)
+
+curl http://localhost:3000/?guesses=abc
+// ValidationError (one guess does not parse into an int because it is alpha)
+
+curl http://localhost:3000/?guesses=1.2345
+// ValidationError (one guess does not parse into an int because it is a decimal)
+```
+
+###### `.uniq`
+
+Removes duplicate items from val which must be an array.
+
+You must ensure that val is already an array.
+
+``` javascript
+this.validateQuery('nums')
+  .toArray()
+  .toInts()
+  .uniq()
+```
+
+```bash
+curl http://localhost:3000/?nums=42
+// 200 OK, this.vals.nums => [42]
+
+curl http://localhost:3000/?nums=42&nums=42&nums=42
+// 200 OK, this.vals.nums => [42]
+```
+
+###### `.toBoolean()`
+
+Coerces val into boolean `true` | `false`. 
+
+Simply uses `!!val`, so note that these will all coerce into `false`:
+
+- Empty string `""`
+- Zero `0`
+- `null`
+- `false`
+- `undefined`
+
+``` javascript
+this.validateBody('remember-me')
+  .toBoolean()
+```
+
+###### `.toFloat([tip])`
+
+Converts val to float, throws if it fails.
+
+Note: it uses `Number.parseFloat(val)` internally, so you will have to 
+chain `isFiniteNumber()` after it if you don't want `Infinity`:
+
+- `Number.parseFloat('Infinity') => Infinity`
+- `Number.parseFloat('5e3') => 5000`
+- `Number.parseFloat('5abc') => 5`
+- `Number.parseFloat('-5abc') => -5`
+- `Number.parseFloat('5.123456789') => 5.123456789`
+
+Since it's easy to forget to chain `.isFiniteNumber()` after `.toFloat()`,
+and since the vast majority of the time you do not want `Infinity`, and
+since letting `Infinity` enter your system will almost always be due to 
+simple oversight, I want to change this behavior to make it safer.
+
+``` javascript
+this.validateBody('num')
+  .toFloat()
+  .isFiniteNumber()
+```
+
+###### `.toString()`
+
+Calls `val.toString()` or sets it to empty string `""` if it is falsey.
+
+Note: If val is truthy but does not have a `.toString()` method, 
+like if val is `Object.create(null)`, then koa-bouncer will break since this
+is undefined behavior that koa-bouncer does not want to make assumptions about.
+
+**TODO**: Think of a use-case and then write an example.
+
+###### `.trim()`
+
+Trims whitespace off the left and right side of val which **must** be a string.
+
+You almost always use this for string user-input (aside from passwords) since
+leading/trailing whitespace is almost always a mistake or extraneous. 
+
+**You do not want to call it on the user's password** since space is perfectly
+legal and if you trim user passwords you will hash a password that the
+user did not input.
+
+koa-bouncer will break if you do not ensure that val is a string when you
+call `.trim()`.
+
+``` javascript
+this.validateBody('username')
+  .required()
+  .isString()
+  .trim();
+```
+
+###### `.fromJson([tip])`
+
+Parses val into a JSON object. 
+
+Fails if it is invalid JSON or if it is not a string.
+
+``` javascript
+this.validateBody('data')
+  .required()
+  .fromJson()
+```
+
+###### `.tap(fn)`
+
+Passes val into given `fn` and sets val to the result of `fn(val)`.
+
+General-purpose tool for transforming the val. 
+
+Almost all the validator methods that koa-bouncer provides are just convenience
+methods on top of `.tap` and `.checkPred`, so use these methods to implement
+your own logic as you please.
+
+``` javascript
+this.validateBody('direction')
+  .required('Direction is required')
+  .isString()
+  .trim()
+  .tap(x => x.toLowerCase())
+  .isIn(['north', 'south', 'east', 'west'], 'Invalid direction')
+```
+
+``` bash
+curl http://localhost:3000/?direction=WeST
+=> 200 OK, this.vals.direction => 'west'
+```
+
+## TODO
+
+- Add .isDate, .isDateString, .toDate, .isAFter, .isBefore
+
 ## License
 
 MIT

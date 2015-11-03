@@ -480,6 +480,15 @@ describe('Validator#isString', () => {
     request(app.listen()).get('/?test=foo').expect(200).end(done);
   });
 
+  it('works with new String() as well (where typeof is \'object\')', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = new String('hello world');
+      this.validateQuery('test').isString();
+    });
+    request(app.listen()).get('/').expect(200).end(done);
+  });
+
   it('throws ValidationError if val is not a string', done => {
     const app = makeApp();
     app.use(function*() {

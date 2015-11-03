@@ -372,6 +372,8 @@ Validator.addMethod('checkNot', function(result, tip) {
 });
 
 Validator.addMethod('fromJson', function(tip) {
+  assert(_.isString(this.val()));
+
   var parsedObj;
   try {
     parsedObj = JSON.parse(this.val());
