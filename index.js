@@ -271,7 +271,12 @@ Validator.addMethod('toArray', function() {
 // parse it into 5. this is because you err on the side of being
 // less lenient with user input.
 Validator.addMethod('toInts', function(tip) {
-  assert(_.isArray(this.val()));
+
+  // Convert undefined val into []
+  if (_.isUndefined(this.val())) {
+    this.vals[this.key] = [];
+    return this;
+  }
 
   if (!_.every(this.val(), v.isInt)) {
     this.throwError(tip || this.key + ' must be an array of integers');

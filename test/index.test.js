@@ -792,6 +792,44 @@ describe('Validator#toInts', () => {
       .end(done);
   });
 
+  it('fails if an item is a decimal', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = ['1.23'];
+      this.validateQuery('test').toInts();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('fails if an item is alpha', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = ['abc'];
+      this.validateQuery('test').toInts();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('converts val to [] if val is undefined', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = undefined;
+      this.validateQuery('test').toInts();
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('[]')
+      .end(done);
+  });
+
   it('passes if string array parses fully into integer array', done => {
     const app = makeApp();
     app.use(function*() {
