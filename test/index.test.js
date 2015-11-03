@@ -1324,3 +1324,141 @@ describe('Validator instantiation', () => {
       .end(done);
   });
 });
+
+////////////////////////////////////////////////////////////
+
+function buildSimpleTests(methodName, specs) {
+  // ['inputVal', 200, 'testDescription']
+  // ['inputVal', { opts }, 200, 'testDescription']
+  (specs || []).forEach(spec => {
+    let testInput;
+    let statusCode;
+    let testDescription;
+    let methodOpts;
+    if (spec.length <= 3) {
+      // ['inputVal', 200]
+      // ['inputVal', 200, 'testDescription']
+      testInput = spec[0];
+      statusCode = spec[1];
+      testDescription = spec[2];
+    } else {
+      // ['inputVal', { opts }, 200, 'testDescription']
+      assert.equal(spec.length, 4);
+      testInput = spec[0];
+      methodOpts = spec[1];
+      statusCode = spec[2];
+      testDescription = spec[3];
+    }
+    it(testDescription, done => {
+      const app = makeApp();
+      app.use(function*() {
+        this.vals.test = testInput;
+        this.validateQuery('test')[methodName](methodOpts);
+      });
+      request(app.listen()).get('/').expect(statusCode).end(done);
+    });
+  });
+}
+
+describe('Validator#isAlpha', () => {
+  buildSimpleTests('isAlpha', [
+    ['abc', 200, 'positive case works'],
+    ['123', 418, 'negative case works'],
+    ['', 200, 'passes on empty string']
+  ]);
+});
+
+describe('Validator#isAlphanumeric', () => {
+  buildSimpleTests('isAlphanumeric', [
+    ['abc123', 200, 'positive case works'],
+    ['abc123$', 418, 'negative case works'],
+    ['', 200, 'passes on empty string']
+  ]);
+});
+
+describe('Validator#isAscii', () => {
+  buildSimpleTests('isAscii', [
+    ['$1abc[]', 200, 'positive case works'],
+    ['$abc123©', 418, 'negative case works'],
+    ['', 200, 'passes on empty string']
+  ]);
+});
+
+describe('Validator#isNumeric', () => {
+  buildSimpleTests('isNumeric', [
+    ['123', 200, 'positive case works'],
+    ['abc123', 418, 'negative case works'],
+    ['', 200, 'passes on empty string']
+  ]);
+});
+
+describe('Validator#isBase64', () => {
+  buildSimpleTests('isBase64', [
+    ['aGVsbG8=', 200, 'positive case works'],
+    ['aGVsbG8=$', 418, 'negative case works'],
+    ['', 200, 'passes on empty string']
+  ]);
+});
+
+describe('Validator#isEmail', () => {
+  buildSimpleTests('isEmail', [
+    ['kate@example.com', 200, 'positive case works'],
+    ['kate', 418, 'negative case works'],
+    ['', 418, 'throws on empty string']
+  ]);
+});
+
+describe('Validator#isHexColor', () => {
+  buildSimpleTests('isHexColor', [
+    ['aaaaaa', 200, 'works with 6-digit'],
+    ['#aaaaaa', 200, 'works with #6-digit'],
+    ['aaa', 200, 'works with 3-digit'],
+    ['#aaa', 200, 'works with #3-digit'],
+    ['', 418, 'throws on empty string']
+  ]);
+});
+
+describe('Validator#isUuid', () => {
+  buildSimpleTests('isUuid', [
+    // v3
+    ['00000000-0000-3000-0000-000000000000', 'v3', 200, 'recognizes v3'],
+    ['00000000-0000-4000-0000-000000000000', 'v3', 418, 'recognizes non-v3'],
+    ['00000000-0000-4000-8000-000000000000', 'v4', 200, 'recognizes non-v3'],//v4
+    // v4
+    ['00000000-0000-4000-8000-000000000000', 'v4', 200, 'recognizes v4'],
+    ['00000000-0000-4000-0000-000000000000', 'v4', 418, 'recognizes non-v4'],
+    ['00000000-0000-3000-0000-000000000000', 'v4', 418, 'recognizes non-v4'],//v3
+    // v5
+    ['00000000-0000-5000-8000-000000000000', 'v5', 200, 'recognizes v5'],
+    ['00000000-0000-5000-0000-000000000000', 'v5', 418, 'recognizes non-v5'],
+    ['00000000-0000-3000-0000-000000000000', 'v5', 418, 'recognizes non-v5'],//v3
+    ['00000000-0000-4000-8000-000000000000', 'v5', 418, 'recognizes non-v4'],//v4
+    // all
+    // - with explicit version set
+    ['00000000-0000-3000-0000-000000000000', 'all', 200, 'explicit all: recognizes v3'],
+    ['00000000-0000-4000-8000-000000000000', 'all', 200, 'explicit all: recognizes v4'],
+    ['00000000-0000-5000-8000-000000000000', 'all', 200, 'explicit all: recognizes v5'],
+    ['xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'all', 418, 'explicit all: recognizes non-uuid'],
+    // - without explicit version set
+    ['00000000-0000-3000-0000-000000000000', 200, 'default all: recognizes v3'],
+    ['00000000-0000-4000-8000-000000000000', 200, 'default all: recognizes v4'],
+    ['00000000-0000-5000-8000-000000000000', 200, 'default all: recognizes v5'],
+    ['xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 418, 'explicit all: recognizes non-uuid'],
+    // case insensitive
+    ['aaaaaaaa-aaaa-3aaa-aaaa-aaaaaaaaaaaa', 200, 'case-insensitive (lowercase)'],
+    ['AAAAAAAA-AAAA-3AAA-AAAA-AAAAAAAAAAAA', 200, 'case-insensitive (uppercase)'],
+  ]);
+});
+
+describe('Validator#isJson', () => {
+  buildSimpleTests('isJson', [
+    ['{}', 200],
+    ['{ "foo": "bar" }', 200],
+    ['{ "foo": ["bar", 42, true] }', 200],
+    ['{ "foo": ["bar", 42, true }', 418],
+    ['{ "foo: "bar" }', 418],
+    ['{ "foo" }', 418],
+  ]);
+});
+
+////////////////////////////////////////////////////////////

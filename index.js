@@ -420,7 +420,118 @@ Validator.addMethod('checkNotPred', function(pred, tip) {
   return this;
 });
 
-// API ///////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+// More specific validator methods
+////////////////////////////////////////////////////////////
+
+Validator.addMethod('isAlpha', function(tip) {
+  const re = /^[a-z]*$/i;
+  tip = tip || this.key + ' must only contain chars a-z';
+  this.isString(tip);
+  if (!re.test(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+Validator.addMethod('isAlphanumeric', function(tip) {
+  const re = /^[a-z0-9]*$/i;
+  tip = tip || this.key + ' must must be alphanumeric (a-z, 0-9)';
+  this.isString(this);
+  if (!re.test(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+Validator.addMethod('isNumeric', function(tip) {
+  const re = /^[0-9]*$/;
+  tip = tip || this.key + ' must must only contain numbers';
+  this.isString(tip);
+  if (!re.test(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+Validator.addMethod('isAscii', function(tip) {
+  const re = /^[\x00-\x7F]*$/;
+  tip = tip || this.key + ' must contain only ASCII chars';
+  if (!re.test(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+Validator.addMethod('isBase64', function(tip) {
+  tip = tip || this.key + ' must be base64 encoded';
+  this.isString(tip);
+  if (this.val().length === 0)
+    return this;
+  if (!v.isBase64(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+// TODO: Add support to validator's `options` into isEmail
+Validator.addMethod('isEmail', function(tip) {
+  tip = tip || this.key + ' must be a valid email address';
+  this.isString(tip);
+  if (!v.isEmail(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+Validator.addMethod('isHexColor', function(tip) {
+  tip = tip || this.key + ' must be a hex color';
+  this.isString(tip);
+  if (!v.isHexColor(this.val()))
+    this.throwError(tip);
+  return this;
+});
+
+//.isUuid('v4', 'must be uuid');
+//.isUuid('must be uuid');
+//.isUuid('v4');
+//.isUuid();
+Validator.addMethod('isUuid', function(version, tip) {
+  if (_.isString(version) && _.isUndefined(tip)) {
+    // Handle .isUuid('must be uuid') and .isUuid('v4')
+    if (!_.contains(['v3', 'v4', 'v5', 'all'], version)) {
+      // Handle: .isUuid('must be uuid')
+      tip = version;
+      version = 'all';
+    }
+  } else if (_.isUndefined(version) && _.isUndefined(tip)) {
+    // Handle: .isUuid()
+    version = 'all';
+  }
+
+  tip = tip || (this.key + ' must be a UUID' + (version !== 'all' ? version : ''));
+
+  const re = {
+    'v3': /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
+    'v4': /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    'v5': /^[0-9A-F]{8}-[0-9A-F]{4}-5[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i
+  };
+
+  if (!re[version].test(this.val()))
+    this.throwError(tip);
+
+  return this;
+});
+
+Validator.addMethod('isJson', function(tip) {
+  tip = tip || this.key + ' must be JSON';
+  this.isString(tip);
+  try {
+    JSON.parse(this.val());
+  } catch(err) {
+    this.throwError(tip);
+  }
+  return this;
+});
+
+////////////////////////////////////////////////////////////
+// API
+////////////////////////////////////////////////////////////
 
 exports.ValidationError = ValidationError;
 
