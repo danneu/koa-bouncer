@@ -341,8 +341,10 @@ Validator.addMethod('tap', function(f, tip) {
   let result;
   try {
     result = f.call(this.ctx, this.val());
-  } catch(ex) {
-    this.throwError(tip);
+  } catch(err) {
+    if (err instanceof ValidationError)
+      this.throwError(tip);
+    throw err;
   }
 
   this.set(result);

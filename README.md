@@ -932,9 +932,7 @@ your own logic as you please.
 
 `fn` is called with `this` bound to the current validator instance.
 
-`tip` is used if `fn(val)` throws an error (it's wrapped in try/catch).
-The assumption here is that `fn(val)` failed due to exceptional/unexpected/
-unhandled input from the user, a ValidationError is thrown.
+`tip` is used if `fn(val)` throws a ValidationError error.
 
 ``` javascript
 this.validateBody('direction')
