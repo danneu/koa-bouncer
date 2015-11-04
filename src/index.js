@@ -16,6 +16,32 @@ const isSafeInteger = exports.isSafeInteger = function(n) {
   return Number.MIN_SAFE_INTEGER <= n && n <= Number.MAX_SAFE_INTEGER;
 };
 
+// String | Number -> Bool
+//
+// Works on numbers because .toString() is called on them
+const isIntString = (function() {
+  const re = /^(?:[-+]?(?:0|[1-9][0-9]*))$/;
+  return function isIntString(str) {
+    assert(_.isString(str) || _.isNumber(str));
+    return re.test(str);
+  };
+})();
+
+// String | Number -> Bool
+//
+// Use this when you want to use Number.parseFloat to parse numbers
+// but do not want to parse things like '5e3' or 'Infinity'.
+// Rather just plain ol decimal numbers like '+4.55' and '-6.0001'
+//
+// Works on numbers because .toString() is called on them
+const isDecimalString = (function() {
+  const re = /^[-+]?([0-9]+|\.[0-9]+|[0-9]+\.[0-9]+)$/;
+  return function isDecimalString(str) {
+    assert(_.isString(str) || _.isNumber(str));
+    return re.test(str);
+  };
+})();
+
 function ValidationError(key, message) {
   this.name = 'ValidationError';
   this.message = message;
@@ -246,7 +272,7 @@ Validator.addMethod('isInt', function(tip) {
 
 // Converts value to integer, throwing if it fails
 Validator.addMethod('toInt', function(tip) {
-  this.checkPred(v.isInt, tip || this.key + ' must be an integer');
+  this.checkPred(isIntString, tip || this.key + ' must be an integer');
   const num = Number.parseInt(this.val(), 10);
   this.check(isSafeInteger(num), tip || this.key + ' is out of integer range');
   this.set(num);
@@ -279,7 +305,7 @@ Validator.addMethod('toArray', function() {
 // less lenient with user input.
 Validator.addMethod('toInts', function(tip) {
   this.defaultTo([]);
-  this.checkPred(val => _.every(val, v.isInt), tip || this.key + ' must be array of integers');
+  this.checkPred(val => _.every(val, isIntString), tip || this.key + ' must be array of integers');
   const results = this.val().map(val => parseInt(val, 10));
   this.check(_.every(results, isSafeInteger), tip || this.key + 'must not contain numbers out of integer range');
   this.set(results);
@@ -300,16 +326,18 @@ Validator.addMethod('toBoolean', function() {
   return this;
 });
 
-// Converts value to float, throwing if it fails
+Validator.addMethod('toDecimal', function(tip) {
+  this.checkPred(isDecimalString, tip || this.key + ' must be a decimal number');
+  this.set(Number.parseFloat(this.val()));
+  return this;
+});
+
 Validator.addMethod('toFloat', function(tip) {
   this.checkPred(v.isFloat, tip || this.key + ' must be a float')
   this.set(Number.parseFloat(this.val()));
   return this;
 });
 
-// Converts value to string
-// Undefined value converts to empty string
-// Always succeeds
 Validator.addMethod('toString', function() {
   this.set(this.val() && this.val().toString() || '');
   return this;

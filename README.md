@@ -855,6 +855,20 @@ this.validateBody('remember-me')
   .toBoolean()
 ```
 
+#### .toDecimal([tip])
+
+Converts val to float, but ensures that it a plain ol decimal number.
+
+In most application, you want this over .toFloat.
+
+A parsed decimal will always pass a .isFiniteNumber() check.
+
+``` javascript
+this.validateBody('num')
+  .toDecimal()
+  .isFiniteNumber() // <-- Redundant
+```
+
 #### .toFloat([tip])
 
 Converts val to float, throws if it fails.
@@ -868,10 +882,8 @@ chain `isFiniteNumber()` after it if you don't want `Infinity`:
 - `Number.parseFloat('-5abc') => -5`
 - `Number.parseFloat('5.123456789') => 5.123456789`
 
-Since it's easy to forget to chain `.isFiniteNumber()` after `.toFloat()`,
-and since the vast majority of the time you do not want `Infinity`, and
-since letting `Infinity` enter your system will almost always be due to 
-simple oversight, I want to change this behavior to make it safer.
+Use .toDecimal instead of .toFloat when you only want to allow decimal numbers
+rather than the whole float shebang.
 
 ``` javascript
 this.validateBody('num')

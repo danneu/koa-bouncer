@@ -745,6 +745,58 @@ describe('Validator#toFloat', () => {
   });
 });
 
+describe('Validator#toDecimal', () => {
+  it('passes when val can parse into decimal', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '05.67';
+      this.validateQuery('test').toDecimal();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('5.67')
+      .end(done);
+  });
+
+  it('throws with legal floats that are not decimal numbers (Infinity)', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 'Infinity';
+      this.validateQuery('test').toDecimal();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('throws with legal floats that are not decimal numbers (exponential form)', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '5e3';
+      this.validateQuery('test').toDecimal();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('throws ValidationError if val is not fully decimal', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '1.234abc';
+      this.validateQuery('test').toDecimal();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+});
+
 describe('Validator#toArray', () => {
   it('converts undefined val into []', done => {
     const app = makeApp();
