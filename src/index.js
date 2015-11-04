@@ -502,6 +502,16 @@ Validator.addMethod('decodeBase64', function(tip) {
   return this;
 });
 
+Validator.addMethod('clamp', function(min, max) {
+  assert(_.isNumber(this.val()));
+  assert(_.isNumber(min));
+  assert(_.isNumber(max));
+  assert(min <= max);
+  this.tap(val => val < min ? min : val);
+  this.tap(val => val > max ? max : val);
+  return this;
+});
+
 ////////////////////////////////////////////////////////////
 // API
 ////////////////////////////////////////////////////////////

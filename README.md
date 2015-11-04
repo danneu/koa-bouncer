@@ -1030,6 +1030,37 @@ this.validateBody('message')
   .val(); //=> 'hello'
 ```
 
+#### .clamp(min::Number, max::Number)
+
+Defines a number range that val is restricted to. If val exceeds this range
+in either direction, val is updated to the min or max of the range.
+
+ie. If val < min, then val is set to min. If val > max, then val is set to max.
+
+Note: You must first ensure that val is a number.
+
+``` javascript
+router.get('/users', function*(next) {
+  this.validateQuery('per-page')
+    .defaultTo(50)
+    .toInt('per-page must be an integer')
+    .clamp(10, 100);
+});
+```
+
+``` bash
+curl http://localhost:3000/users
+// 200 OK, this.vals['per-page'] === 50
+
+curl http://localhost:3000/users?per-page=25
+// 200 OK, this.vals['per-page'] === 25 (not clamped since it's in range)
+
+curl http://localhost:3000/users?per-page=5
+// 200 OK, this.vals['per-page'] === 10 (clamped to min)
+
+curl http://localhost:3000/users?per-page=350
+// 200 OK, this.vals['per-page'] === 100 (clamped to max)
+```
 
 ## License
 

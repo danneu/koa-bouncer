@@ -1698,3 +1698,61 @@ describe('bouncer#checkNot', () => {
       .end(done);
   })
 });
+
+describe('Validator#clamp', () => {
+  it('does not change val if min <= val <= max', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 42;
+      this.validateQuery('test').clamp(0, 100);
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('42')
+      .end(done);
+  });
+
+  it('clamps val to min if val < min', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = -1;
+      this.validateQuery('test').clamp(0, 100);
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('0')
+      .end(done);
+  });
+
+  it('clamps val to max if val > max', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 101;
+      this.validateQuery('test').clamp(0, 100);
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('100')
+      .end(done);
+  });
+
+  it('allows min === max', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = -1;
+      this.validateQuery('test').clamp(50, 50);
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('50')
+      .end(done);
+  });
+});
