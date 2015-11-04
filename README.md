@@ -10,7 +10,7 @@
 
 An http parameter validation library for [Koa](http://koajs.com) web apps.
 
-- Inspired by [RocksonZeta](https://github.com/RocksonZeta/koa-validate)
+Inspired by [RocksonZeta](https://github.com/RocksonZeta/koa-validate).
 
     npm install --save koa-bouncer
 
