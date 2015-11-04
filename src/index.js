@@ -113,6 +113,26 @@ Validator.addMethod('checkNotPred', function(pred, tip) {
   return this;
 });
 
+// Arbitrarily transform the current value inside a validator.
+//
+// f is a function that takes one argument: the current value in the validator.
+// Whatever value f returns becomes the new value.
+Validator.addMethod('tap', function(f, tip) {
+  assert(_.isFunction(f));
+
+  let result;
+  try {
+    result = f.call(this.ctx, this.val());
+  } catch(err) {
+    if (err instanceof ValidationError)
+      this.throwError(tip);
+    throw err;
+  }
+
+  this.set(result);
+  return this;
+});
+
 ////////////////////////////////////////////////////////////
 // General built-in methods
 ////////////////////////////////////////////////////////////
@@ -328,26 +348,6 @@ Validator.addMethod('fromJson', function(tip) {
   }
 
   this.set(parsedObj);
-  return this;
-});
-
-// Arbitrarily transform the current value inside a validator.
-//
-// f is a function that takes one argument: the current value in the validator.
-// Whatever value f returns becomes the new value.
-Validator.addMethod('tap', function(f, tip) {
-  assert(_.isFunction(f));
-
-  let result;
-  try {
-    result = f.call(this.ctx, this.val());
-  } catch(err) {
-    if (err instanceof ValidationError)
-      this.throwError(tip);
-    throw err;
-  }
-
-  this.set(result);
   return this;
 });
 
