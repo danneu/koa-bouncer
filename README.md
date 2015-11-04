@@ -258,7 +258,7 @@ chaining things on to the validator.
 
 ## Validator methods
 
-###### `.required([tip])`
+#### .required([tip])
 
 Only fails if val is `undefined`. Required the user to at least provie
 
@@ -267,7 +267,7 @@ this.validateBody('username')
   .required('Must provide username')
 ```
 
-###### `.optional()`
+#### .optional()
 
 If val is `undefined` at this point, then skip over the rest of the methods.
 
@@ -305,7 +305,7 @@ console.log(validator.isOptional());  //=> false
 validator.isEmail();  // This will run
 ```
 
-###### `.isIn(array, [tip])`
+#### .isIn(array, [tip])
 
 Ensure val is included in given array (=== comparison).
 
@@ -315,7 +315,7 @@ this.validateBody('role')
   .isIn(['banned', 'member', 'mod', 'admin'], 'Invalid role')
 ```
 
-###### `.isNotIn(array, [tip])`
+#### .isNotIn(array, [tip])
 
 Ensure val is not included in given array (=== comparison).
 
@@ -324,7 +324,7 @@ this.validateBody('favorite-fruit')
   .isNotIn(['apple', 'pomegranate'], 'You cannot choose forbidden fruit')
 ```
 
-###### `.defaultTo(defaultVal)`
+#### .defaultTo(defaultVal)
 
 If val is `undefined`, set it to defaultVal.
 
@@ -334,7 +334,7 @@ this.validateBody('multiplier')
   .toFloat('multiplier must be a valid number')
 ```
 
-###### `.isString([tip])`
+#### .isString([tip])
 
 Ensure val is a string.
 
@@ -349,7 +349,7 @@ this.validateBody('username')
 It's a good practice to always call one of the `.is*` methods since
 they add explicit clarity to the validation step.
 
-###### `.isArray([tip])`
+#### .isArray([tip])
 
 Ensure val is an Array.
 
@@ -382,7 +382,7 @@ curl http://localhost:3000/?recipients=joey&recipients=kate&recipients=max
 => 200 OK, this.vals.recipients => ['joey', 'kate', 'max']
 ```
 
-###### `.eq(otherVal::Number, [tip])`
+#### .eq(otherVal::Number, [tip])
 
 Ensures `val === otherVal`.
 
@@ -391,7 +391,7 @@ this.validateBody('house-edge')
   .eq(0.01, 'House edge must be 1%')
 ```
 
-###### `.gt(otherVal::Number, [tip])`
+#### .gt(otherVal::Number, [tip])
 
 Ensures `val > otherVal`.
 
@@ -400,7 +400,7 @@ this.validateBody('hp')
   .gt(0, 'Player must have 1 or more hit points')
 ```
 
-###### `.gte(otherVal::Number, [tip])`
+#### .gte(otherVal::Number, [tip])
 
 Ensures `val >= otherVal`.
 
@@ -409,7 +409,7 @@ this.validateBody('age')
   .gte(18, 'Must be 18 or older')
 ```
 
-###### `.lt(otherVal::Number, [tip])`
+#### .lt(otherVal::Number, [tip])
 
 Ensures `val < otherVal`.
 
@@ -418,7 +418,7 @@ this.validateBody('pet-count')
   .lt(10, 'You must have fewer than 10 pets')
 ```
 
-###### `.lte(otherVal::Number, [tip])`
+#### .lte(otherVal::Number, [tip])
 
 Ensures `val <= otherVal`.
 
@@ -427,7 +427,7 @@ this.validateBody('house-edge')
   .lte(0.10, 'House edge cannot be higher than 10%')
 ```
 
-###### `.isLength(min:Int, max:Int, [tip])`
+#### .isLength(min:Int, max:Int, [tip])
 
 Ensure val is a number `min <= val <= max` (inclusive on both sides).
 
@@ -439,7 +439,7 @@ this.validateBody('username')
   .isLength(3, 15, 'Username must be 3-15 chars long')
 ```
 
-###### `.isInt([tip])`
+#### .isInt([tip])
 
 Ensures val is already an integer and that it is within integer range
 (`Number.MIN_SAFE_INTEGER <= val <= Number.MAX_SAFE_INTEGER`).
@@ -449,7 +449,7 @@ this.validateBody('age')
   .isInt('Age must be an integer')
 ```
 
-###### `.isFiniteNumber([tip])`
+#### .isFiniteNumber([tip])
 
 Ensures that val is a number (float) but that it is not `Infinity`.
 
@@ -463,7 +463,7 @@ this.validateBody('num')
   .isFiniteNumber()  // will always fail
 ```
 
-###### `.match(regexp::RegExp, [tip])`
+#### .match(regexp::RegExp, [tip])
 
 Ensures that val matches the given regular expression.
 
@@ -481,7 +481,7 @@ Note: Remember to start your pattern with `^` ("start of string") and
 end your pattern with `$` ("end of string") if val is supposed to
 fully match the pattern.
 
-###### `.notMatch(regexp::RegExp, [tip])`
+#### .notMatch(regexp::RegExp, [tip])
 
 Ensure that val does **not** match the given regexp.
 
@@ -501,7 +501,7 @@ this.validateBody('username')
   .notMatch(/-{2,}/, 'Username must not contain consecutive hyphens')
 ```
 
-###### `.check(result, [tip])` and `.checkNot(result, [tip])`
+#### .check(result, [tip]) and .checkNot(result, [tip])
 
 Unlike most of the other validator methods, `.check` and `.checkNot` do not
 every look at the current val. They only look at the truthy/falseyness of
@@ -531,7 +531,7 @@ this.validateBody('email')
   .check(config.EMAIL_SYSTEM_ONLINE, 'Email system not ready, please try later')
 ```
 
-###### `.checkPred(fn, [tip])` and `.checkPredNot(fn, [tip])`
+#### .checkPred(fn, [tip]) and .checkPredNot(fn, [tip])
 
 Pipes val into given `fn` and checks the result.
 
@@ -564,7 +564,7 @@ this.validateBody('bitcoin-address')
   .checkPred(isValidBitcoinAddress, 'Invalid bitcoin address')
 ```
 
-###### `.isAlpha([tip])`
+#### .isAlpha([tip])
 
 Ensures that val is a string that contains only letters a-z (case insensitive).
 
@@ -576,7 +576,7 @@ this.validateBody('username')
   .isAlpha()
 ```
 
-###### `.isAlphanumeric([tip])`
+#### .isAlphanumeric([tip])
 
 Ensures that val is a string that contains only letters a-z (case insensitive) 
 and numbers 0-9.
@@ -589,7 +589,7 @@ this.validateBody('username')
   .isAlphanumeric()
 ```
 
-###### `.isNumeric([tip])`
+#### .isNumeric([tip])
 
 Ensures that val is a string that contains only numbers 0-9.
 
@@ -601,7 +601,7 @@ this.validateBody('serial-number')
   .isNumeric()
 ```
 
-###### `.isAscii([tip])`
+#### .isAscii([tip])
 
 Ensures that val is a string that contains only 
 ASCII characters (https://es.wikipedia.org/wiki/ASCII).
@@ -620,7 +620,7 @@ this.validateBody('command')
   .isAscii()
 ```
 
-###### `.isBase64([tip])`
+#### .isBase64([tip])
 
 Ensures that val is a base64-encoded string.
 
@@ -634,7 +634,7 @@ this.validateBody('data')
   .isBase64()
 ```
 
-###### `.isEmail([tip])`
+#### .isEmail([tip])
 
 Ensures that val is a valid string email address.
 
@@ -646,7 +646,7 @@ this.validateBody('email')
   .isEmail()
 ```
 
-###### `.isHexColor([tip])`
+#### .isHexColor([tip])
 
 Ensures that val is a hex color string.
 
@@ -664,7 +664,7 @@ this.validateBody('background-color')
   .tap(x => x.startsWith('#') ? x : '#' + x)
 ```
 
-###### `.isUuid([version::String], [tip])`
+#### .isUuid([version::String], [tip])
 
 Ensure that val is a valid uuid string.
 
@@ -686,7 +686,7 @@ router.get('/things/:uuid', function*() {
 });
 ```
 
-###### `.isJson([tip])`
+#### .isJson([tip])
 
 Ensures that val is a valid, well-formed JSON string.
 
@@ -701,7 +701,7 @@ this.validateBody('data')
 
 ### Methods that convert/mutate the val
 
-###### `.set(newVal)`
+#### .set(newVal)
 
 Sets val to arbitrary value `newVal`.
 
@@ -723,7 +723,7 @@ curl http://localhost:3000/?test=foo
 
 Note: `.set(42)` is equivalent to `.tap(x => 42)`.
 
-###### `.toArray()`
+#### .toArray()
 
 Converts val to an array if it is not already an array.
 
@@ -748,7 +748,7 @@ curl http://localhost:3000/?friends=joey&friends=kate
 // 200 OK, this.vals.friends => ['joey', 'kate']
 ```
 
-###### `.toInt([tip])`
+#### .toInt([tip])
 
 Parses and converts val into an integer.
 
@@ -781,7 +781,7 @@ curl http://localhost:3000/?age=9007199254740992
 // ValidationError (out of integer range)
 ```
 
-###### `.toInts([tip])`
+#### .toInts([tip])
 
 Converts each string in val into an integer.
 
@@ -815,7 +815,7 @@ curl http://localhost:3000/?guesses=1.2345
 // ValidationError (one guess does not parse into an int because it is a decimal)
 ```
 
-###### `.uniq`
+#### .uniq
 
 Removes duplicate items from val which must be an array.
 
@@ -836,7 +836,7 @@ curl http://localhost:3000/?nums=42&nums=42&nums=42
 // 200 OK, this.vals.nums => [42]
 ```
 
-###### `.toBoolean()`
+#### .toBoolean()
 
 Coerces val into boolean `true` | `false`. 
 
@@ -853,7 +853,7 @@ this.validateBody('remember-me')
   .toBoolean()
 ```
 
-###### `.toFloat([tip])`
+#### .toFloat([tip])
 
 Converts val to float, throws if it fails.
 
@@ -877,7 +877,7 @@ this.validateBody('num')
   .isFiniteNumber()
 ```
 
-###### `.toString()`
+#### .toString()
 
 Calls `val.toString()` or sets it to empty string `""` if it is falsey.
 
@@ -887,7 +887,7 @@ is undefined behavior that koa-bouncer does not want to make assumptions about.
 
 **TODO**: Think of a use-case and then write an example.
 
-###### `.trim()`
+#### .trim()
 
 Trims whitespace off the left and right side of val which **must** be a string.
 
@@ -908,7 +908,7 @@ this.validateBody('username')
   .trim();
 ```
 
-###### `.fromJson([tip])`
+#### .fromJson([tip])
 
 Parses val into a JSON object. 
 
@@ -920,7 +920,7 @@ this.validateBody('data')
   .fromJson()
 ```
 
-###### `.tap(fn)`
+#### .tap(fn)
 
 Passes val into given `fn` and sets val to the result of `fn(val)`.
 
@@ -944,7 +944,7 @@ curl http://localhost:3000/?direction=WeST
 => 200 OK, this.vals.direction => 'west'
 ```
 
-###### `.encodeBase64([tip])`
+#### .encodeBase64([tip])
 
 Converts val string into base64 encoded string.
 
@@ -958,7 +958,7 @@ this.validateBody('message')
   .val(); //=> 'aGVsbG8='
 ```
 
-###### `.decodeBase64([tip])`
+#### .decodeBase64([tip])
 
 Decodes val string from base64 to string.
 
