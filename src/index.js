@@ -97,8 +97,7 @@ function optionalFn(fn) {
       return this;
     }
 
-    var args = Array.prototype.slice.call(arguments);
-    return fn.apply(this, args);
+    return fn.apply(this, arguments);
   };
 }
 
