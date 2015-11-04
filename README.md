@@ -17,8 +17,8 @@ An http parameter validation library for [Koa](http://koajs.com) web apps.
 ## Example
 
 ``` javascript
-var bouncer = require('koa-bouncer');
-var app = require('koa')();
+const bouncer = require('koa-bouncer');
+const app = require('koa')();
 
 // extends the Koa context with some methods
 app.use(bouncer.middleware());
@@ -37,7 +37,7 @@ app.post('/users', function*() {
     .optional()
     .isString()
     .trim()
-    .checkPred(v.isEmail, 'Invalid email format');
+    .isEmail('Invalid email format');
 
   this.validateBody('password1')
     .required('Password required')
@@ -47,7 +47,7 @@ app.post('/users', function*() {
   this.validateBody('password2')
     .required('Password confirmation required')
     .isString()
-    .checkPred(p2 => p2 === this.vals.password1, 'Passwords must match');
+    .eq(this.vals.password1, 'Passwords must match');
 
   // running database query last to give the other validations a chance to fail
   this.validateBody('uname')
@@ -59,7 +59,7 @@ app.post('/users', function*() {
   //=> { uname: 'foo', password1: 'secret', password2: 'secret' }
   console.log(this.vals);
 
-  var user = yield db.insertUser({
+  const user = yield db.insertUser({
     uname: this.vals.uname,
     email: this.vals.email,
     password: this.vals.password1
