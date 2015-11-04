@@ -349,7 +349,6 @@ Validator.addMethod('trim', function() {
   return this;
 });
 
-// Assert that a string does match the supplied regular expression.
 Validator.addMethod('match', function(regexp, tip) {
   assert(_.isString(this.val()));
   assert(_.isRegExp(regexp));
@@ -357,7 +356,6 @@ Validator.addMethod('match', function(regexp, tip) {
   return this;
 });
 
-// Assert that value does not match the supplied regular expression.
 Validator.addMethod('notMatch', function(regexp, tip) {
   assert(_.isString(this.val()));
   assert(_.isRegExp(regexp));
@@ -528,11 +526,13 @@ exports.middleware = function middleware(opts) {
 
   return function*(next) {
     debug('Initializing koa-bouncer');
+
     var self = this;
     this.vals = {};
 
-    // we save initialized validators so that multiple calls to, example,
-    // this.validateBody('foo') will return the same validator
+    // we save initialized validators for the duration of the request 
+    // so that multiple calls to, example, this.validateBody('foo') 
+    // will return the same validator
     const validators = new Map();
 
     this.validateParam = function(key) {
