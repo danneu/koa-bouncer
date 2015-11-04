@@ -1598,3 +1598,51 @@ describe('Validator#decodeBase64', () => {
 });
 
 ////////////////////////////////////////////////////////////
+
+describe('bouncer#check', () => {
+  it('passes when truthy', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.check('this is ok');
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
+
+  it('throws ValidationError when falsey', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  })
+});
+
+describe('bouncer#checkNot', () => {
+  it('passes when falsey', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.checkNot(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  });
+
+  it('throws ValidationError when truthy', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.checkNot('this is ok');
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  })
+});

@@ -80,12 +80,14 @@ bouncer.middleware(opts)
 This extends the Koa context with these methods for you to use in routes,
 the bulk of the koa-bouncer abstraction:
 
-- `this.validateParam(key)`
-- `this.validateQuery(key)`
-- `this.validateBody(key)`
+- `this.validateParam(key) => Validator`
+- `this.validateQuery(key) => Validator`
+- `this.validateBody(key)  => Validator`
+- `this.check(value)       => throws ValidationError if falsey`
+- `this.checkNot(value)    => throws ValidationError if truthy`
 
-Each of these return a validator that targets the value in the url param,
-query param, or body param that you specified with 'key'.
+The first three methods return a validator that targets the value
+in the url param, query param, or body param that you specified with 'key'.
 
 When you spawn a validator, it immediately populates `this.vals[key]` with
 the initial value of the parameter. You can then chain methods like
