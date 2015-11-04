@@ -440,12 +440,15 @@ Validator.addMethod('isEmail', function(tip) {
   return this;
 });
 
-Validator.addMethod('isHexColor', function(tip) {
-  tip = tip || this.key + ' must be a hex color';
-  this.isString(tip);
-  this.checkPred(v.isHexColor, tip);
-  return this;
-});
+Validator.addMethod('isHexColor', (function() {
+  const re = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
+  return function isHexColor(tip) {
+    tip = tip || this.key + ' must be a hex color';
+    this.isString(tip);
+    this.checkPred(val => re.test(val), tip);
+    return this;
+  };
+})());
 
 //.isUuid('v4', 'must be uuid');
 //.isUuid('must be uuid');
