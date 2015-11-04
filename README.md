@@ -212,7 +212,7 @@ Validator.addMethod('isValidBitcoinAddress', function(tip) {
 
   this
     .isString(tip)
-    .tap(s => s.trim())
+    .trim()
     // Must be alphanumeric from start to finish
     .match(/^[a-z0-9]+$/i, tip)
     // But must not contain any of these chars
@@ -247,12 +247,12 @@ Here's how you'd write a validator method that transforms the underlying value:
 
 ``` javascript
 Validator.addMethod('add10', function() {
-  this.vals[this.key] = this.val() + 10;
+  this.tap(val => val + 10);
   return this;
 });
 ```
 
-In other words, just assign to `this.vals[this.key]` to update the object
+In other words, just use `this.set(newVal)` to update the object
 of validated params. And remember to return `this` so that you can continue
 chaining things on to the validator.
 
