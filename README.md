@@ -17,6 +17,9 @@ Inspired by [RocksonZeta](https://github.com/RocksonZeta/koa-validate).
 Works best with [koa-router](https://github.com/alexmingoia/koa-router) 
 for routing.
 
+If you'd like to see how koa-bouncer looks in a real (demo) Koa application,
+check out my [koa-skeleton](https://github.com/danneu/koa-skeleton) repository.
+
 <br style="clear: both;">
 
 ## Example
