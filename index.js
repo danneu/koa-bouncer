@@ -463,6 +463,22 @@ Validator.addMethod('isJson', function(tip) {
   return this;
 });
 
+Validator.addMethod('encodeBase64', function(tip) {
+  this.isString(tip);
+  this.tap(val => new Buffer(val).toString('base64'), tip);
+  return this;
+});
+
+Validator.addMethod('decodeBase64', function(tip) {
+  tip = tip || this.key + ' must be base64 encoded';
+  this.isString(tip);
+  if (this.val().length === 0)
+    return this;
+  this.isBase64(tip);
+  this.tap(val => new Buffer(val, 'base64').toString());
+  return this;
+});
+
 ////////////////////////////////////////////////////////////
 // API
 ////////////////////////////////////////////////////////////

@@ -1513,4 +1513,88 @@ describe('Validator#isJson', () => {
   ]);
 });
 
+describe('Validator#encodeBase64', () => {
+  it('works when given string with length>0', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 'hello'
+      this.validateQuery('test').encodeBase64();
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('"aGVsbG8="')
+      .end(done);
+  });
+
+  it('encodes empty string to empty string', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = ''
+      this.validateQuery('test').encodeBase64();
+      this.body = JSON.stringify(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('""')
+      .end(done);
+  });
+
+  it('throws ValidationError if val is not string', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = new Date();
+      this.validateQuery('test').encodeBase64();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+});
+
+describe('Validator#decodeBase64', () => {
+  it('decodes a string of length>0', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 'aGVsbG8=';
+      this.validateQuery('test').decodeBase64();
+      this.body = this.vals.test;
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('hello')
+      .end(done);
+  });
+
+  it('decodes empty string to empty string', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '';
+      this.validateQuery('test').decodeBase64();
+      this.body = this.vals.test;
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('')
+      .end(done);
+  });
+
+  it('throws ValidationError if val is not string', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = new Date();
+      this.validateQuery('test').decodeBase64();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+});
+
 ////////////////////////////////////////////////////////////

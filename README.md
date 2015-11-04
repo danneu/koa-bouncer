@@ -944,6 +944,34 @@ curl http://localhost:3000/?direction=WeST
 => 200 OK, this.vals.direction => 'west'
 ```
 
+###### `.encodeBase64([tip])`
+
+Converts val string into base64 encoded string.
+
+Empty string encodes to empty string.
+
+``` javascript
+this.vals.message = 'hello';
+
+this.validateBody('message')
+  .encodeBase64()
+  .val(); //=> 'aGVsbG8='
+```
+
+###### `.decodeBase64([tip])`
+
+Decodes val string from base64 to string.
+
+Empty string decodes to empty string.
+
+``` javascript
+this.vals.message = 'aGVsbG8=';
+
+this.validateBody('message')
+  .decodeBase64()
+  .val(); //=> 'hello'
+```
+
 ## TODO
 
 - Add .isDate, .isDateString, .toDate, .isAFter, .isBefore
