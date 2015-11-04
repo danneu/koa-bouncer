@@ -701,6 +701,28 @@ this.validateBody('data')
 
 ### Methods that convert/mutate the val
 
+###### `.set(newVal)`
+
+Sets val to arbitrary value `newVal`.
+
+Used internally by validator methods to update the value. Can't think
+of a reason you'd actually use it inside a route.
+
+``` javascript
+this.validateQuery('test')
+  .set(42)
+```
+
+``` bash
+curl http://localhost:3000
+// 200 OK, this.vals.test => 42
+
+curl http://localhost:3000/?test=foo
+// 200 OK, this.vals.test => 42
+```
+
+Note: `.set(42)` is equivalent to `.tap(x => 42)`.
+
 ###### `.toArray()`
 
 Converts val to an array if it is not already an array.

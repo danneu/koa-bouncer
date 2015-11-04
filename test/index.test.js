@@ -1,9 +1,11 @@
 'use strict';
+// 3rd
 const request = require('supertest');
 const koa = require('koa');
 const assert = require('chai').assert;
-const bouncer = require('../index.js');
 const _ = require('lodash');
+// 1st
+const bouncer = require('../index.js');
 
 // returns 418 response if it catches a ValidationError
 // for easy supertest testing
