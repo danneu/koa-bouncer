@@ -296,9 +296,8 @@ Validator.addMethod('toArray', function() {
   return this;
 });
 
-// Converts value to array if it's not already an array,
-// and then converts every item in the array to an integer
-// throwing if any of them fail conversion
+// Converts every item in array to an integer.
+// Throws if any do not convert or are not within safe integer range.
 //
 // '5abc' will cause ValidationError even though parseInt would
 // parse it into 5. this is because you err on the side of being
@@ -312,15 +311,12 @@ Validator.addMethod('toInts', function(tip) {
   return this;
 });
 
-// Converts value to array if necessary, then de-dupes it
 Validator.addMethod('uniq', function() {
   assert(_.isArray(this.val()));
   this.tap(_.uniq);
   return this;
 });
 
-// Converts value to boolean
-// Always succeeds
 Validator.addMethod('toBoolean', function() {
   this.tap(Boolean);
   return this;
@@ -526,7 +522,6 @@ exports.middleware = function middleware(opts) {
 
   return function*(next) {
     debug('Initializing koa-bouncer');
-
     var self = this;
     this.vals = {};
 
