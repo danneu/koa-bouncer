@@ -601,6 +601,6 @@ exports.middleware = function middleware(opts) {
       if (result)
         throw new ValidationError(null, tip);
     };
-    yield next;
+    yield* next;
   };
 };
