@@ -30,7 +30,6 @@ function Validator(props) {
   this.ctx = props.ctx;  // Koa context
   this.key = props.key;
   this.vals = props.vals;
-  this.type = props.type;
   this.throwError = function(tip) {
     throw new ValidationError(this.key, tip || 'Invalid value for ' + this.key);
   };
@@ -531,8 +530,7 @@ exports.middleware = function middleware(opts) {
           ctx: self,
           key: key,
           val: self.vals[key] === undefined ? opts.getBody(self)[key] : self.vals[key],
-          vals: self.vals,
-          type: 'body'
+          vals: self.vals
         })
       ).get(key);
     };
