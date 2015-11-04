@@ -920,7 +920,7 @@ this.validateBody('data')
   .fromJson()
 ```
 
-#### .tap(fn)
+#### .tap(fn, [tip])
 
 Passes val into given `fn` and sets val to the result of `fn(val)`.
 
@@ -929,6 +929,12 @@ General-purpose tool for transforming the val.
 Almost all the validator methods that koa-bouncer provides are just convenience
 methods on top of `.tap` and `.checkPred`, so use these methods to implement
 your own logic as you please.
+
+`fn` is called with `this` bound to the current validator instance.
+
+`tip` is used if `fn(val)` throws an error (it's wrapped in try/catch).
+The assumption here is that `fn(val)` failed due to exceptional/unexpected/
+unhandled input from the user, a ValidationError is thrown.
 
 ``` javascript
 this.validateBody('direction')

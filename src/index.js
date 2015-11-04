@@ -336,16 +336,14 @@ Validator.addMethod('fromJson', function(tip) {
 //
 // f is a function that takes one argument: the current value in the validator.
 // Whatever value f returns becomes the new value.
-Validator.addMethod('tap', function(f) {
+Validator.addMethod('tap', function(f, tip) {
   assert(_.isFunction(f));
 
   let result;
   try {
-    result = f.bind(this.ctx)(this.val());
+    result = f.call(this.ctx, this.val());
   } catch(ex) {
-    if (ex instanceof ValidationError)
-      this.throwError();
-    throw ex;
+    this.throwError(tip);
   }
 
   this.set(result);
