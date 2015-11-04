@@ -12,6 +12,8 @@ An http parameter validation library for [Koa](http://koajs.com) web apps.
 
 - Inspired by [RocksonZeta](https://github.com/RocksonZeta/koa-validate)
 
+    npm install --save koa-bouncer
+
 <br style="clear: both;">
 
 ## Example
@@ -68,6 +70,19 @@ app.post('/users', function*() {
   this.redirect('/users/' + user.id);
 });
 ```
+
+## The general idea
+
+The idea is that koa-bouncer exposes methods that transform and
+assert against user-input (form submissions, request bodies,
+query strings) within your routes. 
+
+If an assertion fails, then koa-bouncer throws a `bouncer.ValidationError`
+that you can catch upstream. For example, maybe you want to redirect back
+to the form, show a tip, and repopulate the form with the user's progress.
+
+If validation succeeds, then you can access the validated/transformed
+parameters in a `this.vals` map that gets populated during validation.
 
 ## Usage
 
@@ -259,6 +274,28 @@ of validated params. And remember to return `this` so that you can continue
 chaining things on to the validator.
 
 ## Validator methods
+
+#### .val()
+
+Returns the current value currently inside the validator. 
+
+``` javascript
+router.get('/search', function*() {
+  const validator1 = this.validateQuery('q').required();
+  const validator2 = this.validateQuery('sort').optional();
+
+  this.body = JSON.stringify([validator1.val(), validator2.val()]);
+});
+```
+
+``` bash
+curl http://localhost:3000/search?q=hello&sort=created_at
+// 200 OK ["hello", "created_at"]
+```
+
+I rarely use this method inside a route and prefer to access
+values from the `this.vals` object. So far I only use it internally when
+implementing validator functions.
 
 #### .required([tip])
 
@@ -990,9 +1027,6 @@ this.validateBody('message')
   .val(); //=> 'hello'
 ```
 
-## TODO
-
-- Add .isDate, .isDateString, .toDate, .isAFter, .isBefore
 
 ## License
 
