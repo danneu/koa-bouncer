@@ -14,6 +14,9 @@ Inspired by [RocksonZeta](https://github.com/RocksonZeta/koa-validate).
 
     npm install --save koa-bouncer
 
+Works best with [koa-router](https://github.com/alexmingoia/koa-router) 
+for routing.
+
 <br style="clear: both;">
 
 ## Example
