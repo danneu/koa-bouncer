@@ -515,6 +515,7 @@ exports.middleware = function middleware(opts) {
         })
       ).get(key);
     };
+
     this.validateQuery = function(key) {
       return validators.get(key) || validators.set(key,
         new Validator({
@@ -525,6 +526,7 @@ exports.middleware = function middleware(opts) {
         })
       ).get(key);
     };
+
     this.validateBody = function(key) {
       return validators.get(key) || validators.set(key,
         new Validator({
@@ -536,11 +538,13 @@ exports.middleware = function middleware(opts) {
         })
       ).get(key);
     };
-    this.validate = this.check = function(result, tip) {
+
+    this.check = function(result, tip) {
       if (!result)
         throw new ValidationError(null, tip);
     };
-    this.validateNot = this.checkNot = function(result, tip) {
+
+    this.checkNot = function(result, tip) {
       if (result)
         throw new ValidationError(null, tip);
     };

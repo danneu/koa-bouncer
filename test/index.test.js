@@ -5,7 +5,7 @@ const koa = require('koa');
 const assert = require('chai').assert;
 const _ = require('lodash');
 // 1st
-const bouncer = require('../index.js');
+const bouncer = require('../src/index.js');
 
 // returns 418 response if it catches a ValidationError
 // for easy supertest testing
