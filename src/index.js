@@ -544,7 +544,9 @@ exports.middleware = function middleware(opts) {
         new Validator({
           ctx: self,
           key: key,
-          val: self.vals[key] === undefined ? opts.getParams(self)[key] : self.vals[key],
+          val: self.vals[key] === undefined 
+            ? _.get(opts.getParams(self), key)
+            : self.vals[key],
           vals: self.vals
         })
       ).get(key);
@@ -555,7 +557,9 @@ exports.middleware = function middleware(opts) {
         new Validator({
           ctx: self,
           key: key,
-          val: self.vals[key] === undefined ? opts.getQuery(self)[key] : self.vals[key],
+          val: self.vals[key] === undefined 
+            ? _.get(opts.getQuery(self), key)
+            : self.vals[key],
           vals: self.vals
         })
       ).get(key);
@@ -566,7 +570,9 @@ exports.middleware = function middleware(opts) {
         new Validator({
           ctx: self,
           key: key,
-          val: self.vals[key] === undefined ? opts.getBody(self)[key] : self.vals[key],
+          val: self.vals[key] === undefined 
+            ? _.get(opts.getBody(self), key)
+            : self.vals[key],
           vals: self.vals
         })
       ).get(key);

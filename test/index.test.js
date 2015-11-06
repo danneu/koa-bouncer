@@ -21,7 +21,6 @@ var exposeBouncer = function*(next) {
       //this.throw('boom', 418);
     }
     err.expose = true;
-    console.error(err);
     console.error(err.stack);
     throw err;
   }
@@ -1753,6 +1752,62 @@ describe('Validator#clamp', () => {
       .get('/')
       .expect(200)
       .expect('50')
+      .end(done);
+  });
+});
+
+describe('when ctx getters return undefined', () => {
+  it('getBody() does not err on member access', done => {
+    const app = koa();
+    app.use(exposeBouncer);
+    app.use(bouncer.middleware({ 
+      getBody: ctx => undefined
+    }));
+    app.use(function*() {
+      this.validateBody('test');
+      this.body = this.vals;
+    });
+
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect({})
+      .end(done);
+  });
+
+  it('getQuery() does not err on member access', done => {
+    const app = koa();
+    app.use(exposeBouncer);
+    app.use(bouncer.middleware({ 
+      getQuery: ctx => undefined
+    }));
+    app.use(function*() {
+      this.validateQuery('test');
+      this.body = this.vals;
+    });
+
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect({})
+      .end(done);
+  });
+
+  it('getParam() does not err on member access', done => {
+    const app = koa();
+    app.use(exposeBouncer);
+    app.use(bouncer.middleware({ 
+      getParam: ctx => undefined
+    }));
+    app.use(function*() {
+      this.validateParam('test');
+      this.body = this.vals;
+    });
+
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect({})
       .end(done);
   });
 });
