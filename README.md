@@ -138,7 +138,8 @@ undefined. For example, we can decide that you must always supply a
 ?keyword= to our search endpoint.
 
 And we can use `.optional()` to only run the chained validations/assertions
-if the parameter is undefined (not given by user).
+if the parameter is undefined (not given by user) or if it is an empty
+string.
 
 ``` javascript
 app.get('/search', function*() {
@@ -314,7 +315,8 @@ this.validateBody('username')
 
 #### .optional()
 
-If val is `undefined` at this point, then skip over the rest of the methods.
+If val is `undefined` or if it an empty string (after being trimmed) 
+at this point, then skip over the rest of the methods.
 
 This is so that you can validate a val only if user provided one.
 
@@ -349,6 +351,13 @@ this.vals.email = 'hello@example.com';
 console.log(validator.isOptional());  //=> false
 validator.isEmail();  // This will run
 ```
+
+The reason koa-bouncer considers empty strings to be unset (instead of
+just `undefined`) is because the browser sends empty strings for
+text inputs. This is usually the behavior you want.
+
+Also, note that `.required()` only fails if the value is `undefined`. It 
+succeeds on empty string. This is also usually the behavior you want.
 
 #### .isIn(array, [tip])
 
@@ -1064,6 +1073,13 @@ curl http://localhost:3000/users?per-page=5
 curl http://localhost:3000/users?per-page=350
 // 200 OK, this.vals['per-page'] === 100 (clamped to max)
 ```
+
+## Changelog
+
+### 5.0.0
+
+- `.optional()` now considers empty strings (after trimming) to be unset
+instead of just `undefined` values.
 
 ## License
 

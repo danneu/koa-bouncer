@@ -1267,7 +1267,54 @@ describe('Validator#optional' ,() => {
       .end(done);
   });
 
-  it('continues when val is defined', done => {
+  it('short-circuits when val is empty string', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '';
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  })
+
+  it('short-circuits when val is string that condenses to nothing when trim()\'ed', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '            ';
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  })
+
+  it('optional val is not added to this.vals', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '';
+
+      this.validateQuery('test')
+        .optional()
+        .check(false);
+
+      assert.isUndefined(this.vals.test);
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .end(done);
+  })
+
+  it('continues when val is defined and not empty string', done => {
     const app = makeApp();
     app.use(function*() {
       this.vals.test = 42;
