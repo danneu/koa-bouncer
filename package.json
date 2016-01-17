@@ -1,6 +1,6 @@
 {
   "name": "koa-bouncer",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "A parameter validation library for Koa routes",
   "main": "src/index.js",
   "scripts": {
