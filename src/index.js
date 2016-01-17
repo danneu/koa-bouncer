@@ -189,14 +189,14 @@ Validator.prototype.optional = function() {
 
 Validator.addMethod('isIn', function(arr, tip) {
   assert(_.isArray(arr));
-  this.checkPred(val => _.contains(arr, val), tip);
+  this.checkPred(val => _.includes(arr, val), tip);
   return this;
 });
 
 // Ensures value is not in given array
 Validator.addMethod('isNotIn', function(arr, tip) {
   assert(_.isArray(arr));
-  this.checkNotPred(val => _.contains(arr, val), tip);
+  this.checkNotPred(val => _.includes(arr, val), tip);
   return this;
 });
 
@@ -470,7 +470,7 @@ Validator.addMethod('isUuid', (function() {
   return function isUuid(version, tip) {
     if (_.isString(version) && _.isUndefined(tip)) {
       // Handle .isUuid('must be uuid') and .isUuid('v4')
-      if (!_.contains(['v3', 'v4', 'v5', 'all'], version)) {
+      if (!_.includes(['v3', 'v4', 'v5', 'all'], version)) {
         // Handle: .isUuid('must be uuid')
         tip = version;
         version = 'all';
