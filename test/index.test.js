@@ -27,7 +27,7 @@ var exposeBouncer = function*(next) {
 };
 
 function makeApp(opts) {
-  const app = koa();
+  const app = new koa();
   app.use(bouncer.middleware(opts));
   app.use(exposeBouncer);
   return app;
@@ -1805,7 +1805,7 @@ describe('Validator#clamp', () => {
 
 describe('when ctx getters return undefined', () => {
   it('getBody() does not err on member access', done => {
-    const app = koa();
+    const app = new koa();
     app.use(exposeBouncer);
     app.use(bouncer.middleware({ 
       getBody: ctx => undefined
@@ -1823,9 +1823,9 @@ describe('when ctx getters return undefined', () => {
   });
 
   it('getQuery() does not err on member access', done => {
-    const app = koa();
+    const app = new koa();
     app.use(exposeBouncer);
-    app.use(bouncer.middleware({ 
+    app.use(bouncer.middleware({
       getQuery: ctx => undefined
     }));
     app.use(function*() {
@@ -1841,9 +1841,9 @@ describe('when ctx getters return undefined', () => {
   });
 
   it('getParam() does not err on member access', done => {
-    const app = koa();
+    const app = new koa();
     app.use(exposeBouncer);
-    app.use(bouncer.middleware({ 
+    app.use(bouncer.middleware({
       getParam: ctx => undefined
     }));
     app.use(function*() {
