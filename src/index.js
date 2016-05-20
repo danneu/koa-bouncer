@@ -542,64 +542,64 @@ exports.middleware = function middleware(opts) {
   opts.getQuery = opts.getQuery || function(ctx) { return ctx.query; };
   opts.getBody = opts.getBody || function(ctx) { return ctx.request.body; };
 
-  return function*(next) {
+  return function (ctx, next) {
     debug('Initializing koa-bouncer');
-    var self = this;
-    this.vals = {};
+    ctx.vals = {};
 
-    // we save initialized validators for the duration of the request 
-    // so that multiple calls to, example, this.validateBody('foo') 
+    // we save initialized validators for the duration of the request
+    // so that multiple calls to, example, this.validateBody('foo')
     // will return the same validator
     const validators = new Map();
 
-    this.validateParam = function(key) {
+    ctx.validateParam = function(key) {
       return validators.get(key) || validators.set(key,
         new Validator({
-          ctx: self,
+          ctx,
           key: key,
-          val: self.vals[key] === undefined 
-            ? _.get(opts.getParams(self), key)
-            : self.vals[key],
-          vals: self.vals
+          val: ctx.vals[key] === undefined
+            ? _.get(opts.getParams(ctx), key)
+            : ctx.vals[key],
+          vals: ctx.vals
         })
       ).get(key);
     };
 
-    this.validateQuery = function(key) {
+    ctx.validateQuery = function(key) {
       return validators.get(key) || validators.set(key,
         new Validator({
-          ctx: self,
+          ctx,
           key: key,
-          val: self.vals[key] === undefined 
-            ? _.get(opts.getQuery(self), key)
-            : self.vals[key],
-          vals: self.vals
+          val: ctx.vals[key] === undefined
+            ? _.get(opts.getQuery(ctx), key)
+            : ctx.vals[key],
+          vals: ctx.vals
         })
       ).get(key);
     };
 
-    this.validateBody = function(key) {
+    ctx.validateBody = function(key) {
       return validators.get(key) || validators.set(key,
         new Validator({
-          ctx: self,
+          ctx,
           key: key,
-          val: self.vals[key] === undefined 
-            ? _.get(opts.getBody(self), key)
-            : self.vals[key],
-          vals: self.vals
+          val: ctx.vals[key] === undefined
+            ? _.get(opts.getBody(ctx), key)
+            : ctx.vals[key],
+          vals: ctx.vals
         })
       ).get(key);
     };
 
-    this.check = function(result, tip) {
+    ctx.check = function(result, tip) {
       if (!result)
         throw new ValidationError(null, tip);
     };
 
-    this.checkNot = function(result, tip) {
+    ctx.checkNot = function(result, tip) {
       if (result)
         throw new ValidationError(null, tip);
     };
-    yield* next;
+
+    return next();
   };
 };
