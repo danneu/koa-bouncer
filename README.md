@@ -22,6 +22,17 @@ check out my [koa-skeleton](https://github.com/danneu/koa-skeleton) repository.
 
 <br style="clear: both;">
 
+## Note for Koa 2.x users
+
+The stable/NPM version of koa-bouncer targets the latest stable version
+of Koa which is Koa 1.x.
+
+If you use Koa 2.x (which is unstable until `async`/`await` lands in Node), 
+check out the [next][next] branch. Thanks to [@onbjerg][onbjerg].
+
+[next]: https://github.com/danneu/koa-bouncer/tree/next
+[onbjerg]: https://github.com/onbjerg
+
 ## Example
 
 ``` javascript
