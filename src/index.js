@@ -340,9 +340,37 @@ Validator.addMethod('toDecimal', function(tip) {
   return this;
 });
 
+// returns true if v is already a float or if it's a string
+// that can parse into a float.
+function isFloatIncludingInfinity (x) {
+  // If it already is a float
+  if (typeof x === 'number' && !Number.isNaN(x)) {
+    return true;
+  }
+  // If it's a string, use v.isFloat which ensures it doesn't have
+  // illegal float characters like "124abc" even though Number.parseFloat
+  // could parse it into 124.
+  if (typeof x === 'string') {
+    x = x.trim();
+    if (x === 'Infinity' || x === '-Infinity') {
+      return true;
+    } else {
+      return v.isFloat(x);
+    }
+  }
+  return false;
+}
+
 Validator.addMethod('toFloat', function(tip) {
-  this.checkPred(v.isFloat, tip || this.key + ' must be a float')
+  this.checkPred(isFloatIncludingInfinity, tip || this.key + ' must be a float')
   this.set(Number.parseFloat(this.val()));
+  return this;
+});
+
+Validator.addMethod('toFiniteFloat', function(tip) {
+  this.checkPred(isFloatIncludingInfinity, tip || this.key + ' must be a float')
+  this.set(Number.parseFloat(this.val()));
+  this.isFiniteNumber();
   return this;
 });
 

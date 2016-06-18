@@ -703,8 +703,150 @@ describe('Validator#isFiniteNumber', () => {
   });
 });
 
+////////////////////////////////////////////////////////////
+
+describe('Validator#toFiniteFloat', () => {
+  it('succeeds on "1e+50"', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '1e+50';
+      this.validateQuery('test').toFiniteFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('1e+50')
+      .end(done);
+  });
+
+  it('fails on Infinity (float)', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = Infinity;
+      this.validateQuery('test').toFiniteFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('fails on "Infinity" (string)', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 'Infinity';
+      this.validateQuery('test').toFiniteFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('handles val that already is a float', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 5.67;
+      this.validateQuery('test').toFiniteFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('5.67')
+      .end(done);
+  });
+
+  it('passes when val can parse into float', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '05.67';
+      this.validateQuery('test').toFiniteFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('5.67')
+      .end(done);
+  });
+
+  it('passes when val has illegal chars even though parseFloat would work', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = '05.67aasdfsad';
+      this.validateQuery('test').toFiniteFloat();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+
+  it('throws ValidationError if val cannot parse into float', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 'abc';
+      this.validateQuery('test').toFiniteFloat();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(418)
+      .end(done);
+  });
+});
+
+////////////////////////////////////////////////////////////
 
 describe('Validator#toFloat', () => {
+  it('allows Infinity (already a float)', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = Infinity;
+      this.validateQuery('test').toFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect((res) => res.body === Infinity)
+      .end(done);
+  });
+
+  it('allows " Infinity " (string)', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = ' Infinity ';
+      this.validateQuery('test').toFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect((res) => {
+        console.log('res.body', res.body);
+        res.body === Infinity
+      })
+      .end(done);
+  });
+
+  it('handles val that already is a float', done => {
+    const app = makeApp();
+    app.use(function*() {
+      this.vals.test = 5.67;
+      this.validateQuery('test').toFloat();
+      this.body = this.vals.test.toString();
+    });
+    request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('5.67')
+      .end(done);
+  });
+
   it('passes when val can parse into float', done => {
     const app = makeApp();
     app.use(function*() {

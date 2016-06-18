@@ -396,7 +396,7 @@ If val is `undefined`, set it to defaultVal.
 ``` javascript
 this.validateBody('multiplier')
   .defaultTo(1.0)
-  .toFloat('multiplier must be a valid number')
+  .toFiniteFloat('multiplier must be a valid number')
 ```
 
 #### .isString([tip])
@@ -922,7 +922,7 @@ this.validateBody('remember-me')
 
 Converts val to float, but ensures that it a plain ol decimal number.
 
-In most application, you want this over .toFloat.
+In most application, you want this over .toFloat / .toFiniteFloat.
 
 A parsed decimal will always pass a .isFiniteNumber() check.
 
@@ -941,12 +941,23 @@ chain `isFiniteNumber()` after it if you don't want `Infinity`:
 
 - `Number.parseFloat('Infinity') => Infinity`
 - `Number.parseFloat('5e3') => 5000`
+- `Number.parseFloat('1e+50') => 1e+50`
 - `Number.parseFloat('5abc') => 5`
 - `Number.parseFloat('-5abc') => -5`
 - `Number.parseFloat('5.123456789') => 5.123456789`
 
 Use .toDecimal instead of .toFloat when you only want to allow decimal numbers
 rather than the whole float shebang.
+
+``` javascript
+this.validateBody('num')
+  .toFloat()
+  .isFiniteNumber()
+```
+
+#### .toFiniteFloat([tip])
+
+Shortcut for:
 
 ``` javascript
 this.validateBody('num')
