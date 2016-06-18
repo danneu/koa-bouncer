@@ -24,7 +24,7 @@
     "better-assert": "^1.0.2",
     "debug": "^2.1.2",
     "lodash": "^4.0.0",
-    "validator": "^4.2.1"
+    "validator": "^5.4.0"
   },
   "devDependencies": {
     "chai": "^3.4.0",

@@ -1119,9 +1119,9 @@
       "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz"
     },
     "validator": {
-      "version": "4.9.0",
-      "from": "validator@4.9.0",
-      "resolved": "https://registry.npmjs.org/validator/-/validator-4.9.0.tgz"
+      "version": "5.4.0",
+      "from": "validator@5.4.0",
+      "resolved": "https://registry.npmjs.org/validator/-/validator-5.4.0.tgz"
     },
     "vary": {
       "version": "1.1.0",
