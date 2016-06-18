@@ -1098,6 +1098,10 @@ curl http://localhost:3000/users?per-page=350
 
 ## Changelog
 
+### 5.1.0
+
+- Added `.toFiniteFloat`.
+
 ### 5.0.0
 
 - `.optional()` now considers empty strings (after trimming) to be unset
