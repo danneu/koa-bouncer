@@ -368,10 +368,7 @@ Validator.addMethod('toFloat', function(tip) {
 });
 
 Validator.addMethod('toFiniteFloat', function(tip) {
-  this.checkPred(isFloatIncludingInfinity, tip || this.key + ' must be a float')
-  this.set(Number.parseFloat(this.val()));
-  this.isFiniteNumber();
-  return this;
+  return this.toFloat().isFiniteNumber();
 });
 
 Validator.addMethod('toString', function() {
