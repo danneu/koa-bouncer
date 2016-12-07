@@ -1,4 +1,5 @@
 'use strict';
+require('babel-polyfill');
 // 3rd
 const request = require('supertest');
 const koa = require('koa');
@@ -10,24 +11,23 @@ const bouncer = require('../src/index.js');
 // returns 418 response if it catches a ValidationError
 // for easy supertest testing
 // TODO: find a better way to test koa-bouncer
-var exposeBouncer = function*(next) {
+var exposeBouncer = async function (ctx, next) {
   try {
-    yield* next;
-    this.status = 200;
-  } catch(err){
+    await next();
+    ctx.status = 200;
+  } catch (err) {
     if (err instanceof bouncer.ValidationError) {
-      this.status = 418;
+      ctx.status = 418;
       return;
-      //this.throw('boom', 418);
     }
     err.expose = true;
     console.error(err.stack);
-    throw err;
+    ctx.throw(err);
   }
 };
 
 function makeApp(opts) {
-  const app = koa();
+  const app = new koa();
   app.use(bouncer.middleware(opts));
   app.use(exposeBouncer);
   return app;
@@ -36,13 +36,13 @@ function makeApp(opts) {
 ////////////////////////////////////////////////////////////
 
 describe('Validator', () => {
-  it('populates this.vals on instantiation', (done) => {
+  it('populates ctx.vals on instantiation', (done) => {
     // i.e. does not require a Validation method to be called just to
-    // populate this.vals[this.key]
+    // populate ctx.vals[this.key]
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test');
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.validateQuery('test');
+      ctx.body = ctx.vals.test;
     });
     request(app.listen())
       .get('/?test=foo')
@@ -57,8 +57,8 @@ describe('Validator', () => {
 describe('Validator#checkPred', () => {
   it('works with arbitrary predicates', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').checkPred(_.isArray);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').checkPred(_.isArray);
     });
     request(app.listen()).get('/?test=a&test=b').expect(200).end(done);
   });
@@ -67,8 +67,8 @@ describe('Validator#checkPred', () => {
 describe('Validator#checkPred', () => {
   it('works with arbitrary predicates', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').checkNotPred(_.isArray);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').checkNotPred(_.isArray);
     });
     request(app.listen()).get('/?test=a').expect(200).end(done);
   });
@@ -79,26 +79,26 @@ describe('Validator#checkPred', () => {
 describe('Validator#required', () => {
   it('throws if val is undefined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').required();
+    app.use(function(ctx) {
+      ctx.validateQuery('test').required();
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
 
   it('does not throw if val is defined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').required();
+    app.use(function(ctx) {
+      ctx.validateQuery('test').required();
     });
     request(app.listen()).get('/?test=42').expect(200).end(done);
   });
 
   it('does not throw if val is falsey', done => {
     const app = makeApp();
-    app.use(function*() {
+    app.use(function(ctx) {
       // ensure the querystring parser actually does what i think it does
-      assert.equal(0, this.query.test.length);
-      this.validateQuery('test').required();
+      assert.equal(0, ctx.query.test.length);
+      ctx.validateQuery('test').required();
     });
     request(app.listen()).get('/?test=').expect(200).end(done);
   });
@@ -109,16 +109,16 @@ describe('Validator#required', () => {
 describe('Validator#isIn', () => {
   it('passes if item is in array', (done) => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isIn(['a', 'b', 'c']);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isIn(['a', 'b', 'c']);
     });
     request(app.listen()).get('/?test=b').expect(200).end(done);
   });
 
   it('throws ValidationError if item is not in array', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isIn(['a', 'b', 'c']);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isIn(['a', 'b', 'c']);
     });
     request(app.listen()).get('/?test=z').expect(418).end(done);
   });
@@ -129,16 +129,16 @@ describe('Validator#isIn', () => {
 describe('Validator#isNotIn', () => {
   it('throws ValidationError if item is in array', (done) => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isNotIn(['a', 'b', 'c']);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isNotIn(['a', 'b', 'c']);
     });
     request(app.listen()).get('/?test=b').expect(418).end(done);
   });
 
   it('passes if item is not in array', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isNotIn(['a', 'b', 'c']);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isNotIn(['a', 'b', 'c']);
     });
     request(app.listen()).get('/?test=z').expect(200).end(done);
   });
@@ -149,16 +149,16 @@ describe('Validator#isNotIn', () => {
 describe('Validator#isArray', () => {
   it('passes if val is array', (done) => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isArray();
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isArray();
     });
     request(app.listen()).get('/?test=a&test=b').expect(200).end(done);
   });
 
   it('throws ValidationError if val is not array', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isArray();
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isArray();
     });
     request(app.listen()).get('/?test=a').expect(418).end(done);
   });
@@ -169,9 +169,9 @@ describe('Validator#isArray', () => {
 describe('Validation#tap', () => {
   it('allows arbitrary value change', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').tap(() => 'bar');
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.validateQuery('test').tap(() => 'bar');
+      ctx.body = ctx.vals.test;
     });
     request(app.listen())
       .get('/?test=foo')
@@ -191,9 +191,9 @@ describe('Parameter getter override', () => {
           return { test: 'aaa' };
         }
       });
-      app.use(function*() {
-        this.validateParam('test');
-        this.body = this.vals.test;
+      app.use(function(ctx) {
+        ctx.validateParam('test');
+        ctx.body = ctx.vals.test;
       });
       request(app.listen()).get('/').expect(200).expect('aaa').end(done);
     });
@@ -206,9 +206,9 @@ describe('Parameter getter override', () => {
           return { test: 'bbb' };
         }
       });
-      app.use(function*() {
-        this.validateQuery('test');
-        this.body = this.vals.test;
+      app.use(function(ctx) {
+        ctx.validateQuery('test');
+        ctx.body = ctx.vals.test;
       });
       request(app.listen()).get('/').expect(200).expect('bbb').end(done);
     });
@@ -221,9 +221,9 @@ describe('Parameter getter override', () => {
           return { test: 'ccc' };
         }
       });
-      app.use(function*() {
-        this.validateBody('test');
-        this.body = this.vals.test;
+      app.use(function(ctx) {
+        ctx.validateBody('test');
+        ctx.body = ctx.vals.test;
       });
       request(app.listen()).get('/').expect(200).expect('ccc').end(done);
     });
@@ -235,25 +235,25 @@ describe('Parameter getter override', () => {
 describe('Validator#eq', () => {
   it('passes if strictly === equivalent', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').eq('foo');
+    app.use(function(ctx) {
+      ctx.validateQuery('test').eq('foo');
     });
     request(app.listen()).get('/?test=foo').expect(200).end(done);
   });
 
   it('throws ValidationError if only == equivalent', done => {
     const app = makeApp();
-    app.use(function*() {
-      assert.isString(this.query.test);  // check assumptions
-      this.validateQuery('test').eq(2);
+    app.use(function(ctx) {
+      assert.isString(ctx.query.test);  // check assumptions
+      ctx.validateQuery('test').eq(2);
     });
     request(app.listen()).get('/?test=2').expect(418).end(done);
   });
 
   it('throws ValidationError for obvious inequality', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').eq(['a', 'b', 'c']);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').eq(['a', 'b', 'c']);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -262,27 +262,27 @@ describe('Validator#eq', () => {
 describe('Validator#gt', () => {
   it('passes if val > target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 11;
-      this.validateQuery('test').gt(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 11;
+      ctx.validateQuery('test').gt(10);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('throws ValidationError if val === target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 10;
-      this.validateQuery('test').gt(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 10;
+      ctx.validateQuery('test').gt(10);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
 
   it('throws ValidationError if val < target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 9;
-      this.validateQuery('test').gt(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 9;
+      ctx.validateQuery('test').gt(10);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -291,27 +291,27 @@ describe('Validator#gt', () => {
 describe('Validator#gte', () => {
   it('passes if val > target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 11;
-      this.validateQuery('test').gte(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 11;
+      ctx.validateQuery('test').gte(10);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('passes if val === target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 10;
-      this.validateQuery('test').gte(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 10;
+      ctx.validateQuery('test').gte(10);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('throws ValidationError if val < target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 9;
-      this.validateQuery('test').gte(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 9;
+      ctx.validateQuery('test').gte(10);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -320,27 +320,27 @@ describe('Validator#gte', () => {
 describe('Validator#lt', () => {
   it('passes if val < target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 9;
-      this.validateQuery('test').lt(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 9;
+      ctx.validateQuery('test').lt(10);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('throws ValidationError if val === target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 10;
-      this.validateQuery('test').lt(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 10;
+      ctx.validateQuery('test').lt(10);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
 
   it('throws ValidationError if val > target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 11;
-      this.validateQuery('test').lt(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 11;
+      ctx.validateQuery('test').lt(10);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -349,27 +349,27 @@ describe('Validator#lt', () => {
 describe('Validator#lte', () => {
   it('passes if val < target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 9;
-      this.validateQuery('test').lte(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 9;
+      ctx.validateQuery('test').lte(10);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('passes if val === target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 10;
-      this.validateQuery('test').lte(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 10;
+      ctx.validateQuery('test').lte(10);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('throws ValidationError if val > target', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = 11;
-      this.validateQuery('test').lte(10);
+    app.use(function(ctx) {
+      ctx.vals['test'] = 11;
+      ctx.validateQuery('test').lte(10);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -380,45 +380,45 @@ describe('Validator#lte', () => {
 describe('Validator#isLength', () => {
   it('throws ValidationError if length < min', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = [1, 2];
-      this.validateQuery('test').isLength(3, 5);
+    app.use(function(ctx) {
+      ctx.vals['test'] = [1, 2];
+      ctx.validateQuery('test').isLength(3, 5);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
 
   it('passes if length === min', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = [1, 2, 3];
-      this.validateQuery('test').isLength(3, 5);
+    app.use(function(ctx) {
+      ctx.vals['test'] = [1, 2, 3];
+      ctx.validateQuery('test').isLength(3, 5);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('passes if min < length < max', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = [1, 2, 3, 4];
-      this.validateQuery('test').isLength(3, 5);
+    app.use(function(ctx) {
+      ctx.vals['test'] = [1, 2, 3, 4];
+      ctx.validateQuery('test').isLength(3, 5);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('passes if length === max', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = [1, 2, 3, 4, 5];
-      this.validateQuery('test').isLength(3, 5);
+    app.use(function(ctx) {
+      ctx.vals['test'] = [1, 2, 3, 4, 5];
+      ctx.validateQuery('test').isLength(3, 5);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('throws ValidationError if length > max', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals['test'] = [1, 2, 3, 4, 5, 6];
-      this.validateQuery('test').isLength(3, 5);
+    app.use(function(ctx) {
+      ctx.vals['test'] = [1, 2, 3, 4, 5, 6];
+      ctx.validateQuery('test').isLength(3, 5);
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -427,46 +427,46 @@ describe('Validator#isLength', () => {
 describe('Validator#defaultTo', () => {
   it('sets val to x if val it is undefined and x is not a function', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').defaultTo('foo');
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.validateQuery('test').defaultTo('foo');
+      ctx.body = ctx.vals.test;
     });
     request(app.listen()).get('/').expect(200).expect('foo').end(done);
   });
 
   it('sets val to x if val it is undefined and x is a function', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').defaultTo(() => 'foo');
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.validateQuery('test').defaultTo(() => 'foo');
+      ctx.body = ctx.vals.test;
     });
     request(app.listen()).get('/').expect(200).expect('foo').end(done);
   });
 
   it('function passed to defaultTo can access Koa ctx with `this`', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.canYouReadMe = true;
-      this.validateQuery('test').defaultTo(function() {
+    app.use(function(ctx) {
+      ctx.canYouReadMe = true;
+      ctx.validateQuery('test').defaultTo(function() {
         return this.canYouReadMe;
       });
-      this.body = JSON.stringify(this.vals.test);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen()).get('/').expect(200).expect('true').end(done);
   });
 
   it('does not set val if val is only falsey', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test1 = '';
-      this.vals.test2 = 0;
-      this.vals.test3 = false;
-      this.vals.test4 = null;
-      this.validateQuery('test1').defaultTo('foo');
-      this.validateQuery('test2').defaultTo('foo');
-      this.validateQuery('test3').defaultTo('foo');
-      this.validateQuery('test4').defaultTo('foo');
-      assert.notMatch(_.values(this.vals).join(''), /foo/);
+    app.use(function(ctx) {
+      ctx.vals.test1 = '';
+      ctx.vals.test2 = 0;
+      ctx.vals.test3 = false;
+      ctx.vals.test4 = null;
+      ctx.validateQuery('test1').defaultTo('foo');
+      ctx.validateQuery('test2').defaultTo('foo');
+      ctx.validateQuery('test3').defaultTo('foo');
+      ctx.validateQuery('test4').defaultTo('foo');
+      assert.notMatch(_.values(ctx.vals).join(''), /foo/);
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
@@ -475,26 +475,26 @@ describe('Validator#defaultTo', () => {
 describe('Validator#isString', () => {
   it('passes if val is string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').isString();
+    app.use(function(ctx) {
+      ctx.validateQuery('test').isString();
     });
     request(app.listen()).get('/?test=foo').expect(200).end(done);
   });
 
   it('works with new String() as well (where typeof is \'object\')', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = new String('hello world');
-      this.validateQuery('test').isString();
+    app.use(function(ctx) {
+      ctx.vals.test = new String('hello world');
+      ctx.validateQuery('test').isString();
     });
     request(app.listen()).get('/').expect(200).end(done);
   });
 
   it('throws ValidationError if val is not a string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 42;
-      this.validateQuery('test').isString();
+    app.use(function(ctx) {
+      ctx.vals.test = 42;
+      ctx.validateQuery('test').isString();
     });
     request(app.listen()).get('/').expect(418).end(done);
   });
@@ -503,10 +503,10 @@ describe('Validator#isString', () => {
 describe('Validator#toString', () => {
   it('works', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = [1, 2, 3];
-      this.validateQuery('test').toString();
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.vals.test = [1, 2, 3];
+      ctx.validateQuery('test').toString();
+      ctx.body = ctx.vals.test;
     });
     request(app.listen())
       .get('/')
@@ -517,13 +517,13 @@ describe('Validator#toString', () => {
 
   it('converts null/undefined into empty string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test1 = null;
-      this.vals.test2 = undefined;
-      this.validateQuery('test1').toString();
-      this.validateQuery('test2').toString();
-      assert.equal(this.vals.test1, '');
-      assert.equal(this.vals.test2, '');
+    app.use(function(ctx) {
+      ctx.vals.test1 = null;
+      ctx.vals.test2 = undefined;
+      ctx.validateQuery('test1').toString();
+      ctx.validateQuery('test2').toString();
+      assert.equal(ctx.vals.test1, '');
+      assert.equal(ctx.vals.test2, '');
     });
     request(app.listen())
       .get('/')
@@ -535,10 +535,10 @@ describe('Validator#toString', () => {
 describe('Validator#trim', () => {
   it('works', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '  foo  ';
-      this.validateQuery('test').trim();
-      this.body = this.vals.test.length.toString();
+    app.use(function(ctx) {
+      ctx.vals.test = '  foo  ';
+      ctx.validateQuery('test').trim();
+      ctx.body = ctx.vals.test.length.toString();
     });
     request(app.listen())
       .get('/')
@@ -551,9 +551,9 @@ describe('Validator#trim', () => {
 describe('Validator#isInt', () => {
   it('passes if val is an integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 5;
-      this.validateQuery('test').isInt();
+    app.use(function(ctx) {
+      ctx.vals.test = 5;
+      ctx.validateQuery('test').isInt();
     });
     request(app.listen())
       .get('/')
@@ -563,9 +563,9 @@ describe('Validator#isInt', () => {
 
   it('throws ValidationError if val is obviously not an integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '5';
-      this.validateQuery('test').isInt();
+    app.use(function(ctx) {
+      ctx.vals.test = '5';
+      ctx.validateQuery('test').isInt();
     });
     request(app.listen())
       .get('/')
@@ -575,9 +575,9 @@ describe('Validator#isInt', () => {
 
   it('passes if val is a decimal that lands on .00', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 5.00;
-      this.validateQuery('test').isInt();
+    app.use(function(ctx) {
+      ctx.vals.test = 5.00;
+      ctx.validateQuery('test').isInt();
     });
     request(app.listen())
       .get('/')
@@ -587,9 +587,9 @@ describe('Validator#isInt', () => {
 
   it('throws ValidationError if val is a decimal that does not land on .0', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 5.0001;
-      this.validateQuery('test').isInt();
+    app.use(function(ctx) {
+      ctx.vals.test = 5.0001;
+      ctx.validateQuery('test').isInt();
     });
     request(app.listen())
       .get('/')
@@ -599,9 +599,9 @@ describe('Validator#isInt', () => {
 
   it('throws ValidationError if val is not a safe integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = Number.MAX_SAFE_INTEGER + 1;
-      this.validateQuery('test').isInt();
+    app.use(function(ctx) {
+      ctx.vals.test = Number.MAX_SAFE_INTEGER + 1;
+      ctx.validateQuery('test').isInt();
     });
     request(app.listen())
       .get('/')
@@ -615,10 +615,10 @@ describe('Validator#isInt', () => {
 describe('Validator#toInt', () => {
   it('passes when val parses fully into integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '5';
-      this.validateQuery('test').toInt();
-      this.body = this.vals.test.toString();
+    app.use(function(ctx) {
+      ctx.vals.test = '5';
+      ctx.validateQuery('test').toInt();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -629,9 +629,9 @@ describe('Validator#toInt', () => {
 
   it('throws ValidationError if val has extraneous non-integer chars', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '5.67abc';
-      this.validateQuery('test').toInt();
+    app.use(function(ctx) {
+      ctx.vals.test = '5.67abc';
+      ctx.validateQuery('test').toInt();
     });
     request(app.listen())
       .get('/')
@@ -641,9 +641,9 @@ describe('Validator#toInt', () => {
 
   it('throws ValidationError if val cannot parse into an integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'abc';
-      this.validateQuery('test').toInt();
+    app.use(function(ctx) {
+      ctx.vals.test = 'abc';
+      ctx.validateQuery('test').toInt();
     });
     request(app.listen())
       .get('/')
@@ -653,9 +653,9 @@ describe('Validator#toInt', () => {
 
   it('throws ValidationError if val parses into unsafe integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = (Number.MAX_SAFE_INTEGER + 1).toString();
-      this.validateQuery('test').toInt();
+    app.use(function(ctx) {
+      ctx.vals.test = (Number.MAX_SAFE_INTEGER + 1).toString();
+      ctx.validateQuery('test').toInt();
     });
     request(app.listen())
       .get('/')
@@ -667,9 +667,9 @@ describe('Validator#toInt', () => {
 describe('Validator#isFiniteNumber', () => {
   it('works', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 1.67;
-      this.validateQuery('test').isFiniteNumber();
+    app.use(function(ctx) {
+      ctx.vals.test = 1.67;
+      ctx.validateQuery('test').isFiniteNumber();
     });
     request(app.listen())
       .get('/')
@@ -679,9 +679,9 @@ describe('Validator#isFiniteNumber', () => {
 
   it('throws ValidationError if val is Infinity', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = Infinity;
-      this.validateQuery('test').isFiniteNumber();
+    app.use(function(ctx) {
+      ctx.vals.test = Infinity;
+      ctx.validateQuery('test').isFiniteNumber();
     });
     request(app.listen())
       .get('/')
@@ -692,9 +692,9 @@ describe('Validator#isFiniteNumber', () => {
   // ensure it doesn't behave like the old global isFinite impl
   it('throws ValidationError if val is null', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = null;
-      this.validateQuery('test').isFiniteNumber();
+    app.use(function(ctx) {
+      ctx.vals.test = null;
+      ctx.validateQuery('test').isFiniteNumber();
     });
     request(app.listen())
       .get('/')
@@ -849,10 +849,10 @@ describe('Validator#toFloat', () => {
 
   it('passes when val can parse into float', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '05.67';
-      this.validateQuery('test').toFloat();
-      this.body = this.vals.test.toString();
+    app.use(function(ctx) {
+      ctx.vals.test = '05.67';
+      ctx.validateQuery('test').toFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -863,9 +863,9 @@ describe('Validator#toFloat', () => {
 
   it('passes when val has illegal chars even though parseFloat would work', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '05.67aasdfsad';
-      this.validateQuery('test').toFloat();
+    app.use(function(ctx) {
+      ctx.vals.test = '05.67aasdfsad';
+      ctx.validateQuery('test').toFloat();
     });
     request(app.listen())
       .get('/')
@@ -875,9 +875,9 @@ describe('Validator#toFloat', () => {
 
   it('throws ValidationError if val cannot parse into float', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'abc';
-      this.validateQuery('test').toFloat();
+    app.use(function(ctx) {
+      ctx.vals.test = 'abc';
+      ctx.validateQuery('test').toFloat();
     });
     request(app.listen())
       .get('/')
@@ -889,10 +889,10 @@ describe('Validator#toFloat', () => {
 describe('Validator#toDecimal', () => {
   it('passes when val can parse into decimal', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '05.67';
-      this.validateQuery('test').toDecimal();
-      this.body = this.vals.test.toString();
+    app.use(function(ctx) {
+      ctx.vals.test = '05.67';
+      ctx.validateQuery('test').toDecimal();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -903,9 +903,9 @@ describe('Validator#toDecimal', () => {
 
   it('throws with legal floats that are not decimal numbers (Infinity)', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'Infinity';
-      this.validateQuery('test').toDecimal();
+    app.use(function(ctx) {
+      ctx.vals.test = 'Infinity';
+      ctx.validateQuery('test').toDecimal();
     });
     request(app.listen())
       .get('/')
@@ -915,9 +915,9 @@ describe('Validator#toDecimal', () => {
 
   it('throws with legal floats that are not decimal numbers (exponential form)', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '5e3';
-      this.validateQuery('test').toDecimal();
+    app.use(function(ctx) {
+      ctx.vals.test = '5e3';
+      ctx.validateQuery('test').toDecimal();
     });
     request(app.listen())
       .get('/')
@@ -927,9 +927,9 @@ describe('Validator#toDecimal', () => {
 
   it('throws ValidationError if val is not fully decimal', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '1.234abc';
-      this.validateQuery('test').toDecimal();
+    app.use(function(ctx) {
+      ctx.vals.test = '1.234abc';
+      ctx.validateQuery('test').toDecimal();
     });
     request(app.listen())
       .get('/')
@@ -941,9 +941,9 @@ describe('Validator#toDecimal', () => {
 describe('Validator#toArray', () => {
   it('converts undefined val into []', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').toArray();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').toArray();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -954,10 +954,10 @@ describe('Validator#toArray', () => {
 
   it('converts defined non-array val to [val]', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 42;
-      this.validateQuery('test').toArray();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = 42;
+      ctx.validateQuery('test').toArray();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -968,10 +968,10 @@ describe('Validator#toArray', () => {
 
   it('does nothing if val is already an array', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = [1, 2, 3];
-      this.validateQuery('test').toArray();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = [1, 2, 3];
+      ctx.validateQuery('test').toArray();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -984,10 +984,10 @@ describe('Validator#toArray', () => {
 describe('Validator#toInts', () => {
   it('passes if array is blank', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = [];
-      this.validateQuery('test').toInts();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = [];
+      ctx.validateQuery('test').toInts();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -998,9 +998,9 @@ describe('Validator#toInts', () => {
 
   it('fails if an item is a decimal', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ['1.23'];
-      this.validateQuery('test').toInts();
+    app.use(function(ctx) {
+      ctx.vals.test = ['1.23'];
+      ctx.validateQuery('test').toInts();
     });
     request(app.listen())
       .get('/')
@@ -1010,9 +1010,9 @@ describe('Validator#toInts', () => {
 
   it('fails if an item is alpha', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ['abc'];
-      this.validateQuery('test').toInts();
+    app.use(function(ctx) {
+      ctx.vals.test = ['abc'];
+      ctx.validateQuery('test').toInts();
     });
     request(app.listen())
       .get('/')
@@ -1022,10 +1022,10 @@ describe('Validator#toInts', () => {
 
   it('converts val to [] if val is undefined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
-      this.validateQuery('test').toInts();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
+      ctx.validateQuery('test').toInts();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1036,10 +1036,10 @@ describe('Validator#toInts', () => {
 
   it('passes if string array parses fully into integer array', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ['1', '2', '3'];
-      this.validateQuery('test').toInts();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = ['1', '2', '3'];
+      ctx.validateQuery('test').toInts();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1050,9 +1050,9 @@ describe('Validator#toInts', () => {
 
   it('throws ValidationError if an item does not fully parse into integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ['1', '2', NaN];
-      this.validateQuery('test').toInts();
+    app.use(function(ctx) {
+      ctx.vals.test = ['1', '2', NaN];
+      ctx.validateQuery('test').toInts();
     });
     request(app.listen())
       .get('/')
@@ -1062,9 +1062,9 @@ describe('Validator#toInts', () => {
 
   it('throws ValidationError if an item is not a safe integer', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ['1', '2', (Number.MAX_SAFE_INTEGER + 1).toString()];
-      this.validateQuery('test').toInts();
+    app.use(function(ctx) {
+      ctx.vals.test = ['1', '2', (Number.MAX_SAFE_INTEGER + 1).toString()];
+      ctx.validateQuery('test').toInts();
     });
     request(app.listen())
       .get('/')
@@ -1076,10 +1076,10 @@ describe('Validator#toInts', () => {
 describe('Validator#uniq', () => {
   it('de-dupes array items', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = [1, 2, 2, 2, 3];
-      this.validateQuery('test').uniq();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = [1, 2, 2, 2, 3];
+      ctx.validateQuery('test').uniq();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1092,13 +1092,13 @@ describe('Validator#uniq', () => {
 describe('Validator#toBoolean', () => {
   it('!!coerces val into boolean', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test1 = {};
-      this.vals.test2 = null;
-      this.validateQuery('test1').toBoolean();
-      this.validateQuery('test2').toBoolean();
-      this.body = JSON.stringify([
-        this.vals.test1, this.vals.test2
+    app.use(function(ctx) {
+      ctx.vals.test1 = {};
+      ctx.vals.test2 = null;
+      ctx.validateQuery('test1').toBoolean();
+      ctx.validateQuery('test2').toBoolean();
+      ctx.body = JSON.stringify([
+        ctx.vals.test1, ctx.vals.test2
       ]);
     });
     request(app.listen())
@@ -1113,10 +1113,10 @@ describe('Validator#toBoolean', () => {
   // but i don't want that.
   it('considers val="false" truthy', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test1 = 'false';
-      this.validateQuery('test1').toBoolean();
-      this.body = JSON.stringify(this.vals.test1);
+    app.use(function(ctx) {
+      ctx.vals.test1 = 'false';
+      ctx.validateQuery('test1').toBoolean();
+      ctx.body = JSON.stringify(ctx.vals.test1);
     });
     request(app.listen())
       .get('/')
@@ -1127,10 +1127,10 @@ describe('Validator#toBoolean', () => {
 
   it('considers val="off" truthy', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test1 = 'off';
-      this.validateQuery('test1').toBoolean();
-      this.body = JSON.stringify(this.vals.test1);
+    app.use(function(ctx) {
+      ctx.vals.test1 = 'off';
+      ctx.validateQuery('test1').toBoolean();
+      ctx.body = JSON.stringify(ctx.vals.test1);
     });
     request(app.listen())
       .get('/')
@@ -1145,9 +1145,9 @@ describe('Validator#toBoolean', () => {
 describe('Validator#match', () => {
   it('passes if regex test passes', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'foobar';
-      this.validateQuery('test').match(/^foo/);
+    app.use(function(ctx) {
+      ctx.vals.test = 'foobar';
+      ctx.validateQuery('test').match(/^foo/);
     });
     request(app.listen())
       .get('/')
@@ -1157,9 +1157,9 @@ describe('Validator#match', () => {
 
   it('throws ValidationError if regex test fails', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'foobar';
-      this.validateQuery('test').match(/^foo$/);
+    app.use(function(ctx) {
+      ctx.vals.test = 'foobar';
+      ctx.validateQuery('test').match(/^foo$/);
     });
     request(app.listen())
       .get('/')
@@ -1171,9 +1171,9 @@ describe('Validator#match', () => {
 describe('Validator#notMatch', () => {
   it('passes if regex test fails', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'barfoo';
-      this.validateQuery('test').notMatch(/^foo/);
+    app.use(function(ctx) {
+      ctx.vals.test = 'barfoo';
+      ctx.validateQuery('test').notMatch(/^foo/);
     });
     request(app.listen())
       .get('/')
@@ -1183,9 +1183,9 @@ describe('Validator#notMatch', () => {
 
   it('throws ValidationError if regex test passes', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'foobar';
-      this.validateQuery('test').notMatch(/^foo/);
+    app.use(function(ctx) {
+      ctx.vals.test = 'foobar';
+      ctx.validateQuery('test').notMatch(/^foo/);
     });
     request(app.listen())
       .get('/')
@@ -1199,8 +1199,8 @@ describe('Validator#notMatch', () => {
 describe('Validator#check', () => {
   it('passes when val is truthy', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').check(true);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').check(true);
     });
     request(app.listen())
       .get('/')
@@ -1210,8 +1210,8 @@ describe('Validator#check', () => {
 
   it('throws Validation Error when val is falsey', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').check(false);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').check(false);
     });
     request(app.listen())
       .get('/')
@@ -1223,8 +1223,8 @@ describe('Validator#check', () => {
 describe('Validator#checkNot', () => {
   it('passes when val is falsey', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').checkNot(false);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').checkNot(false);
     });
     request(app.listen())
       .get('/')
@@ -1234,8 +1234,8 @@ describe('Validator#checkNot', () => {
 
   it('throws Validation Error when val is truthy', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.validateQuery('test').checkNot(true);
+    app.use(function(ctx) {
+      ctx.validateQuery('test').checkNot(true);
     });
     request(app.listen())
       .get('/')
@@ -1249,12 +1249,12 @@ describe('Validator#checkNot', () => {
 describe('Validator#fromJson', () => {
   it('works if val is valid JSON', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test1 = '{ "foo": "bar" }';
-      this.vals.test2 = 'true';
-      this.validateQuery('test1').fromJson();
-      this.validateQuery('test2').fromJson();
-      this.body = JSON.stringify([this.vals.test1.foo, this.vals.test2]);
+    app.use(function(ctx) {
+      ctx.vals.test1 = '{ "foo": "bar" }';
+      ctx.vals.test2 = 'true';
+      ctx.validateQuery('test1').fromJson();
+      ctx.validateQuery('test2').fromJson();
+      ctx.body = JSON.stringify([ctx.vals.test1.foo, ctx.vals.test2]);
     });
     request(app.listen())
       .get('/')
@@ -1265,9 +1265,9 @@ describe('Validator#fromJson', () => {
 
   it('throws ValidationError if val is not valid JSON', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '{ foo: bar }';
-      this.validateQuery('test').fromJson();
+    app.use(function(ctx) {
+      ctx.vals.test = '{ foo: bar }';
+      ctx.validateQuery('test').fromJson();
     });
     request(app.listen())
       .get('/')
@@ -1281,10 +1281,10 @@ describe('Validator#fromJson', () => {
 describe('general sanity checks', () => {
   it('works', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '{ "foo": "bar" }';
+    app.use(function(ctx) {
+      ctx.vals.test = '{ "foo": "bar" }';
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .required()
         .fromJson()
         .tap(x => x.foo)
@@ -1293,7 +1293,7 @@ describe('general sanity checks', () => {
         .toArray()
         .toInts();
 
-      this.body = JSON.stringify(this.vals.test);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1304,10 +1304,10 @@ describe('general sanity checks', () => {
 
   it('works with optional()', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .fromJson()
         .tap(x => x.foo)
@@ -1316,7 +1316,7 @@ describe('general sanity checks', () => {
         .toArray()
         .toInts();
 
-      this.body = String(this.vals.test);
+      ctx.body = String(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1325,12 +1325,12 @@ describe('general sanity checks', () => {
       .end(done);
   });
 
-  it('loses optional state if initialized with its this.vals defined', done => {
+  it('loses optional state if initialized with its ctx.vals defined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'foo';
+    app.use(function(ctx) {
+      ctx.vals.test = 'foo';
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
     });
@@ -1340,12 +1340,12 @@ describe('general sanity checks', () => {
       .end(done);
   });
 
-  it('does not lose optional state if initialized with its this.vals undefined', done => {
+  it('does not lose optional state if initialized with its ctx.vals undefined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
     });
@@ -1372,16 +1372,16 @@ describe('isSafeInteger', () => {
 describe('multiple Validator chains', () => {
   it('persists the underlying value', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 0;
+    app.use(function(ctx) {
+      ctx.vals.test = 0;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .tap(n => n + 1);
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .tap(n => n + 1);
 
-      this.body = JSON.stringify(this.vals.test);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1396,10 +1396,10 @@ describe('multiple Validator chains', () => {
 describe('Validator#optional' ,() => {
   it('short-circuits when val is undefined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
     });
@@ -1411,10 +1411,10 @@ describe('Validator#optional' ,() => {
 
   it('short-circuits when val is empty string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '';
+    app.use(function(ctx) {
+      ctx.vals.test = '';
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
     });
@@ -1426,10 +1426,10 @@ describe('Validator#optional' ,() => {
 
   it('short-circuits when val is string that condenses to nothing when trim()\'ed', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '            ';
+    app.use(function(ctx) {
+      ctx.vals.test = '            ';
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
     });
@@ -1439,16 +1439,16 @@ describe('Validator#optional' ,() => {
       .end(done);
   })
 
-  it('optional val is not added to this.vals', done => {
+  it('optional val is not added to ctx.vals', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '';
+    app.use(function(ctx) {
+      ctx.vals.test = '';
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
 
-      assert.isUndefined(this.vals.test);
+      assert.isUndefined(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1458,9 +1458,9 @@ describe('Validator#optional' ,() => {
 
   it('continues when val is defined and not empty string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 42;
-      this.validateQuery('test')
+    app.use(function(ctx) {
+      ctx.vals.test = 42;
+      ctx.validateQuery('test')
         .optional()
         .check(false);
     });
@@ -1472,16 +1472,16 @@ describe('Validator#optional' ,() => {
 
   it('optional state does not apply when defined later on', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .check(false);
 
-      this.vals.test = 42;
+      ctx.vals.test = 42;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .check(false);
     });
     request(app.listen())
@@ -1492,16 +1492,16 @@ describe('Validator#optional' ,() => {
 
   it('optional state remains through validate* calls', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      const validatorStart = this.validateQuery('test')
+      const validatorStart = ctx.validateQuery('test')
         .optional()
         .check(false);
 
       assert.isTrue(validatorStart.isOptional());
 
-      const validatorFinish = this.validateQuery('test');
+      const validatorFinish = ctx.validateQuery('test');
       assert.isTrue(validatorFinish.isOptional());
     });
     request(app.listen())
@@ -1512,18 +1512,18 @@ describe('Validator#optional' ,() => {
 
   it('loses optional state when defined later on', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      const validatorStart = this.validateQuery('test')
+      const validatorStart = ctx.validateQuery('test')
         .optional()
         .check(false);
 
       assert.isTrue(validatorStart.isOptional());
 
-      this.vals.test = 42;
+      ctx.vals.test = 42;
 
-      const validatorFinish = this.validateQuery('test');
+      const validatorFinish = ctx.validateQuery('test');
       assert.equal(validatorStart, validatorFinish);
       assert.isFalse(validatorFinish.isOptional());
     });
@@ -1537,10 +1537,10 @@ describe('Validator#optional' ,() => {
 
   it('short-circuits isIn when val is undefined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .isIn(['this', 'would normally', 'fail']);
     });
@@ -1552,10 +1552,10 @@ describe('Validator#optional' ,() => {
 
   it('short-circuits eq when val is undefined', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = undefined;
+    app.use(function(ctx) {
+      ctx.vals.test = undefined;
 
-      this.validateQuery('test')
+      ctx.validateQuery('test')
         .optional()
         .eq(42);
     });
@@ -1571,11 +1571,11 @@ describe('Validator#optional' ,() => {
 describe('Validator instantiation', () => {
   it('only gets instantiated once', done => {
     const app = makeApp();
-    app.use(function*() {
-      const v1 = this.validateQuery('test');
-      const v2 = this.validateQuery('test');
-      const v3 = this.validateQuery('other');
-      this.body = JSON.stringify([v1 === v2, v1 === v3]);
+    app.use(function(ctx) {
+      const v1 = ctx.validateQuery('test');
+      const v2 = ctx.validateQuery('test');
+      const v3 = ctx.validateQuery('other');
+      ctx.body = JSON.stringify([v1 === v2, v1 === v3]);
     });
     request(app.listen())
       .get('/')
@@ -1586,10 +1586,10 @@ describe('Validator instantiation', () => {
 
   it('reads its starting val from existing ctx.vals', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 42;
-      const validator = this.validateQuery('test');
-      this.body = JSON.stringify(validator.val());
+    app.use(function(ctx) {
+      ctx.vals.test = 42;
+      const validator = ctx.validateQuery('test');
+      ctx.body = JSON.stringify(validator.val());
     });
     request(app.listen())
       .get('/')
@@ -1600,11 +1600,11 @@ describe('Validator instantiation', () => {
 
   it('does not have a stale val()', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 42;
-      const validator = this.validateQuery('test');
-      this.vals.test = 'foo';
-      this.body = JSON.stringify(validator.val());
+    app.use(function(ctx) {
+      ctx.vals.test = 42;
+      const validator = ctx.validateQuery('test');
+      ctx.vals.test = 'foo';
+      ctx.body = JSON.stringify(validator.val());
     });
     request(app.listen())
       .get('/')
@@ -1640,9 +1640,9 @@ function buildSimpleTests(methodName, specs) {
     }
     it(testDescription, done => {
       const app = makeApp();
-      app.use(function*() {
-        this.vals.test = testInput;
-        this.validateQuery('test')[methodName](methodOpts);
+      app.use(function(ctx) {
+        ctx.vals.test = testInput;
+        ctx.validateQuery('test')[methodName](methodOpts);
       });
       request(app.listen()).get('/').expect(statusCode).end(done);
     });
@@ -1756,10 +1756,10 @@ describe('Validator#isJson', () => {
 describe('Validator#encodeBase64', () => {
   it('works when given string with length>0', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'hello'
-      this.validateQuery('test').encodeBase64();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = 'hello'
+      ctx.validateQuery('test').encodeBase64();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1770,10 +1770,10 @@ describe('Validator#encodeBase64', () => {
 
   it('encodes empty string to empty string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ''
-      this.validateQuery('test').encodeBase64();
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = ''
+      ctx.validateQuery('test').encodeBase64();
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1784,9 +1784,9 @@ describe('Validator#encodeBase64', () => {
 
   it('throws ValidationError if val is not string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = new Date();
-      this.validateQuery('test').encodeBase64();
+    app.use(function(ctx) {
+      ctx.vals.test = new Date();
+      ctx.validateQuery('test').encodeBase64();
     });
     request(app.listen())
       .get('/')
@@ -1798,10 +1798,10 @@ describe('Validator#encodeBase64', () => {
 describe('Validator#decodeBase64', () => {
   it('decodes a string of length>0', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'aGVsbG8=';
-      this.validateQuery('test').decodeBase64();
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.vals.test = 'aGVsbG8=';
+      ctx.validateQuery('test').decodeBase64();
+      ctx.body = ctx.vals.test;
     });
     request(app.listen())
       .get('/')
@@ -1812,10 +1812,10 @@ describe('Validator#decodeBase64', () => {
 
   it('decodes empty string to empty string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '';
-      this.validateQuery('test').decodeBase64();
-      this.body = this.vals.test;
+    app.use(function(ctx) {
+      ctx.vals.test = '';
+      ctx.validateQuery('test').decodeBase64();
+      ctx.body = ctx.vals.test;
     });
     request(app.listen())
       .get('/')
@@ -1826,9 +1826,9 @@ describe('Validator#decodeBase64', () => {
 
   it('throws ValidationError if val is not string', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = new Date();
-      this.validateQuery('test').decodeBase64();
+    app.use(function(ctx) {
+      ctx.vals.test = new Date();
+      ctx.validateQuery('test').decodeBase64();
     });
     request(app.listen())
       .get('/')
@@ -1842,8 +1842,8 @@ describe('Validator#decodeBase64', () => {
 describe('bouncer#check', () => {
   it('passes when truthy', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.check('this is ok');
+    app.use(function(ctx) {
+      ctx.check('this is ok');
     });
     request(app.listen())
       .get('/')
@@ -1853,8 +1853,8 @@ describe('bouncer#check', () => {
 
   it('throws ValidationError when falsey', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.check(false);
+    app.use(function(ctx) {
+      ctx.check(false);
     });
     request(app.listen())
       .get('/')
@@ -1866,8 +1866,8 @@ describe('bouncer#check', () => {
 describe('bouncer#checkNot', () => {
   it('passes when falsey', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.checkNot(false);
+    app.use(function(ctx) {
+      ctx.checkNot(false);
     });
     request(app.listen())
       .get('/')
@@ -1877,8 +1877,8 @@ describe('bouncer#checkNot', () => {
 
   it('throws ValidationError when truthy', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.checkNot('this is ok');
+    app.use(function(ctx) {
+      ctx.checkNot('this is ok');
     });
     request(app.listen())
       .get('/')
@@ -1890,10 +1890,10 @@ describe('bouncer#checkNot', () => {
 describe('Validator#clamp', () => {
   it('does not change val if min <= val <= max', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 42;
-      this.validateQuery('test').clamp(0, 100);
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = 42;
+      ctx.validateQuery('test').clamp(0, 100);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1904,10 +1904,10 @@ describe('Validator#clamp', () => {
 
   it('clamps val to min if val < min', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = -1;
-      this.validateQuery('test').clamp(0, 100);
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = -1;
+      ctx.validateQuery('test').clamp(0, 100);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1918,10 +1918,10 @@ describe('Validator#clamp', () => {
 
   it('clamps val to max if val > max', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 101;
-      this.validateQuery('test').clamp(0, 100);
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = 101;
+      ctx.validateQuery('test').clamp(0, 100);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1932,10 +1932,10 @@ describe('Validator#clamp', () => {
 
   it('allows min === max', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = -1;
-      this.validateQuery('test').clamp(50, 50);
-      this.body = JSON.stringify(this.vals.test);
+    app.use(function(ctx) {
+      ctx.vals.test = -1;
+      ctx.validateQuery('test').clamp(50, 50);
+      ctx.body = JSON.stringify(ctx.vals.test);
     });
     request(app.listen())
       .get('/')
@@ -1947,14 +1947,14 @@ describe('Validator#clamp', () => {
 
 describe('when ctx getters return undefined', () => {
   it('getBody() does not err on member access', done => {
-    const app = koa();
+    const app = new koa();
     app.use(exposeBouncer);
-    app.use(bouncer.middleware({ 
+    app.use(bouncer.middleware({
       getBody: ctx => undefined
     }));
-    app.use(function*() {
-      this.validateBody('test');
-      this.body = this.vals;
+    app.use(function(ctx) {
+      ctx.validateBody('test');
+      ctx.body = ctx.vals;
     });
 
     request(app.listen())
@@ -1965,14 +1965,14 @@ describe('when ctx getters return undefined', () => {
   });
 
   it('getQuery() does not err on member access', done => {
-    const app = koa();
+    const app = new koa();
     app.use(exposeBouncer);
-    app.use(bouncer.middleware({ 
+    app.use(bouncer.middleware({
       getQuery: ctx => undefined
     }));
-    app.use(function*() {
-      this.validateQuery('test');
-      this.body = this.vals;
+    app.use(function(ctx) {
+      ctx.validateQuery('test');
+      ctx.body = ctx.vals;
     });
 
     request(app.listen())
@@ -1983,14 +1983,14 @@ describe('when ctx getters return undefined', () => {
   });
 
   it('getParam() does not err on member access', done => {
-    const app = koa();
+    const app = new koa();
     app.use(exposeBouncer);
-    app.use(bouncer.middleware({ 
+    app.use(bouncer.middleware({
       getParam: ctx => undefined
     }));
-    app.use(function*() {
-      this.validateParam('test');
-      this.body = this.vals;
+    app.use(function(ctx) {
+      ctx.validateParam('test');
+      ctx.body = ctx.vals;
     });
 
     request(app.listen())
