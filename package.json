@@ -22,9 +22,9 @@
   "homepage": "https://github.com/danneu/koa-bouncer",
   "dependencies": {
     "better-assert": "^1.0.2",
-    "debug": "^2.1.2",
+    "debug": "3.0.1",
     "lodash": "^4.0.0",
-    "validator": "^4.2.1"
+    "validator": "8.2.0"
   },
   "devDependencies": {
     "babel-core": "^6.9.0",
@@ -32,12 +32,12 @@
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-stage-0": "^6.5.0",
     "babel-register": "^6.9.0",
-    "chai": "^3.4.0",
-    "eslint": "^1.7.3",
-    "eslint-config-volox": "^1.0.2",
+    "chai": "4.1.2",
+    "eslint": "4.6.1",
+    "eslint-config-volox": "2.1.1",
     "koa": "^2.0.0",
     "mocha": "^2.3.3",
-    "supertest": "^1.1.0"
+    "supertest": "3.0.0"
   },
   "babel": {
     "presets": [
