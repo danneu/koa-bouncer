@@ -22,16 +22,9 @@ check out my [koa-skeleton](https://github.com/danneu/koa-skeleton) repository.
 
 <br style="clear: both;">
 
-## Note for Koa 2.x users
-
-The stable/NPM version of koa-bouncer targets the latest stable version
-of Koa which is Koa 1.x.
-
-If you use Koa 2.x (which is unstable until `async`/`await` lands in Node),
-check out the [next][next] branch. Thanks to [@onbjerg][onbjerg].
-
-[next]: https://github.com/danneu/koa-bouncer/tree/next
-[onbjerg]: https://github.com/onbjerg
+- **Note**: These docs have not yet been fully upgraded to demonstrate koa 2
+  even though koa-bouncer now works with koa 2. Please excuse the koa 1 style
+  middleware and the usage of `this` instead of `ctx`.
 
 ## Example
 
@@ -43,49 +36,49 @@ const app = require('koa')();
 app.use(bouncer.middleware());
 
 // POST /users - create user endpoint
-app.post('/users', function*() {
+app.post('/users', async (ctx) {
 
   // validate input
 
-  this.validateBody('uname')
+  ctx.validateBody('uname')
     .required('Username required')
     .isString()
-    .trim();
+    .trim()
 
-  this.validateBody('email')
+  ctx.validateBody('email')
     .optional()
     .isString()
     .trim()
-    .isEmail('Invalid email format');
+    .isEmail('Invalid email format')
 
-  this.validateBody('password1')
+  ctx.validateBody('password1')
     .required('Password required')
     .isString()
-    .isLength(6, 100, 'Password must be 6-100 chars');
+    .isLength(6, 100, 'Password must be 6-100 chars')
 
-  this.validateBody('password2')
+  ctx.validateBody('password2')
     .required('Password confirmation required')
     .isString()
-    .eq(this.vals.password1, 'Passwords must match');
+    .eq(this.vals.password1, 'Passwords must match')
 
   // running database query last to give the other validations a chance to fail
-  this.validateBody('uname')
-    .check(yield db.findUserByUname(this.vals.uname), 'Username taken');
+  ctx.validateBody('uname')
+    .check(await db.findUserByUname(ctx.vals.uname), 'Username taken')
 
   // if we get this far, then validation succeeded.
 
-  // the validation populates a `this.vals` object with validated values
+  // the validation populates a `ctx.vals` object with validated values
   //=> { uname: 'foo', password1: 'secret', password2: 'secret' }
-  console.log(this.vals);
+  console.log(ctx.vals)
 
-  const user = yield db.insertUser({
+  const user = await db.insertUser({
     uname: this.vals.uname,
     email: this.vals.email,
     password: this.vals.password1
-  });
+  })
 
-  this.redirect('/users/' + user.id);
-});
+  this.redirect('/users/' + user.id)
+})
 ```
 
 ## The general idea
@@ -112,28 +105,28 @@ bouncer.middleware(opts)
 This extends the Koa context with these methods for you to use in routes,
 the bulk of the koa-bouncer abstraction:
 
-- `this.validateParam(key)     => Validator`
-- `this.validateQuery(key)     => Validator`
-- `this.validateBody(key)      => Validator`
-- `this.check(value, [tip])    => throws ValidationError if falsey`
-- `this.checkNot(value, [tip]) => throws ValidationError if truthy`
+- `ctx.validateParam(key)     => Validator`
+- `ctx.validateQuery(key)     => Validator`
+- `ctx.validateBody(key)      => Validator`
+- `ctx.check(value, [tip])    => throws ValidationError if falsey`
+- `ctx.checkNot(value, [tip]) => throws ValidationError if truthy`
 
 The first three methods return a validator that targets the value
 in the url param, query param, or body param that you specified with 'key'.
 
-When you spawn a validator, it immediately populates `this.vals[key]` with
+When you spawn a validator, it immediately populates `ctx.vals[key]` with
 the initial value of the parameter. You can then chain methods like
-`.toString().trim().isEmail()` to transform the value in `this.vals` and
+`.toString().trim().isEmail()` to transform the value in `ctx.vals` and
 make assertions against it.
 
-Just by calling these methods, they will begin populating `this.vals`:
+Just by calling these methods, they will begin populating `ctx.vals`:
 
 ``` javascript
-app.get('/search', function*() {
-  this.validateQuery('keyword');
-  this.validateQuery('sort');
-  this.body = JSON.stringify(this.vals);
-});
+app.get('/search', async (ctx) {
+  ctx.validateQuery('keyword')
+  ctx.validateQuery('sort')
+  ctx.body = JSON.stringify(ctx.vals)
+})
 ```
 
 ``` bash
@@ -153,11 +146,11 @@ if the parameter is undefined (not given by user) or if it is an empty
 string.
 
 ``` javascript
-app.get('/search', function*() {
-  this.validateQuery('keyword').required().isString().trim();
-  this.validateQuery('sort').toArray();
-  this.body = JSON.stringify(this.vals);
-});
+app.get('/search', async (ctx) => {
+  ctx.validateQuery('keyword').required().isString().trim()
+  ctx.validateQuery('sort').toArray()
+  ctx.body = JSON.stringify(ctx.vals)
+})
 ```
 
 ``` bash
