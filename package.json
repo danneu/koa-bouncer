@@ -4,16 +4,15 @@
   "description": "A parameter validation library for Koa routes",
   "main": "src/index.js",
   "scripts": {
-    "test": "NODE_ENV=test mocha --reporter spec --compilers js:babel-core/register"
+    "test":
+      "NODE_ENV=test mocha --reporter spec --compilers js:babel-core/register",
+    "pretty-fix": "./node_modules/.bin/prettier --write \"{src,test}/**/*.js\""
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/danneu/koa-bouncer"
   },
-  "keywords": [
-    "validation",
-    "koa"
-  ],
+  "keywords": ["validation", "koa"],
   "author": "Dan Neumann <danrodneu@gmail.com> (https://github.com/danneu)",
   "license": "MIT",
   "bugs": {
@@ -37,12 +36,15 @@
     "eslint-config-volox": "^1.0.2",
     "koa": "^2.0.0",
     "mocha": "^2.3.3",
+    "prettier": "^1.7.4",
     "supertest": "^1.1.0"
   },
   "babel": {
-    "presets": [
-      "es2015",
-      "stage-0"
-    ]
+    "presets": ["es2015", "stage-0"]
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "es5"
   }
 }

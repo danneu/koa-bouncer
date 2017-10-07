@@ -577,26 +577,12 @@ exports.ValidationError = ValidationError
 
 exports.Validator = Validator
 
-exports.middleware = function middleware(opts) {
-  opts = opts || {}
-
+exports.middleware = function middleware(opts = {}) {
   // default ctx getters that user can override
   // they should take the Koa context and return an object
-  opts.getParams =
-    opts.getParams ||
-    function(ctx) {
-      return ctx.params
-    }
-  opts.getQuery =
-    opts.getQuery ||
-    function(ctx) {
-      return ctx.query
-    }
-  opts.getBody =
-    opts.getBody ||
-    function(ctx) {
-      return ctx.request.body
-    }
+  opts.getParams = opts.getParams || (ctx => ctx.params)
+  opts.getQuery = opts.getQuery || (ctx => ctx.query)
+  opts.getBody = opts.getBody || (ctx => ctx.request.body)
 
   return function(ctx, next) {
     debug('Initializing koa-bouncer')
