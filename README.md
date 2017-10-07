@@ -14,7 +14,7 @@ An http parameter validation library for [Koa](http://koajs.com) web apps.
 
 Inspired by [RocksonZeta](https://github.com/RocksonZeta/koa-validate).
 
-Works best with [koa-router](https://github.com/alexmingoia/koa-router) 
+Works best with [koa-router](https://github.com/alexmingoia/koa-router)
 for routing.
 
 If you'd like to see how koa-bouncer looks in a real (demo) Koa application,
@@ -27,7 +27,7 @@ check out my [koa-skeleton](https://github.com/danneu/koa-skeleton) repository.
 The stable/NPM version of koa-bouncer targets the latest stable version
 of Koa which is Koa 1.x.
 
-If you use Koa 2.x (which is unstable until `async`/`await` lands in Node), 
+If you use Koa 2.x (which is unstable until `async`/`await` lands in Node),
 check out the [next][next] branch. Thanks to [@onbjerg][onbjerg].
 
 [next]: https://github.com/danneu/koa-bouncer/tree/next
@@ -92,7 +92,7 @@ app.post('/users', function*() {
 
 The idea is that koa-bouncer exposes methods that transform and
 assert against user-input (form submissions, request bodies,
-query strings) within your routes. 
+query strings) within your routes.
 
 If an assertion fails, then koa-bouncer throws a `bouncer.ValidationError`
 that you can catch upstream. For example, maybe you want to redirect back
@@ -295,7 +295,7 @@ chaining things on to the validator.
 
 #### .val()
 
-Returns the current value currently inside the validator. 
+Returns the current value currently inside the validator.
 
 ``` javascript
 router.get('/search', function*() {
@@ -326,7 +326,7 @@ this.validateBody('username')
 
 #### .optional()
 
-If val is `undefined` or if it an empty string (after being trimmed) 
+If val is `undefined` or if it an empty string (after being trimmed)
 at this point, then skip over the rest of the methods.
 
 This is so that you can validate a val only if user provided one.
@@ -367,7 +367,7 @@ The reason koa-bouncer considers empty strings to be unset (instead of
 just `undefined`) is because the browser sends empty strings for
 text inputs. This is usually the behavior you want.
 
-Also, note that `.required()` only fails if the value is `undefined`. It 
+Also, note that `.required()` only fails if the value is `undefined`. It
 succeeds on empty string. This is also usually the behavior you want.
 
 #### .isIn(array, [tip])
@@ -403,7 +403,7 @@ this.validateBody('multiplier')
 
 Ensure val is a string.
 
-Note: Also works with strings created via `new String()` 
+Note: Also works with strings created via `new String()`
 where `typeof new String() === 'object'`.
 
 ``` javascript
@@ -542,7 +542,7 @@ this.validateBody('username')
   .match(/^[a-z0-9_-]+$/i, 'Username must only contain a-z, 0-9, underscore, and hyphen')
 ```
 
-Note: Remember to start your pattern with `^` ("start of string") and 
+Note: Remember to start your pattern with `^` ("start of string") and
 end your pattern with `$` ("end of string") if val is supposed to
 fully match the pattern.
 
@@ -643,7 +643,7 @@ this.validateBody('username')
 
 #### .isAlphanumeric([tip])
 
-Ensures that val is a string that contains only letters a-z (case insensitive) 
+Ensures that val is a string that contains only letters a-z (case insensitive)
 and numbers 0-9.
 
 ``` javascript
@@ -668,14 +668,14 @@ this.validateBody('serial-number')
 
 #### .isAscii([tip])
 
-Ensures that val is a string that contains only 
+Ensures that val is a string that contains only
 ASCII characters (https://es.wikipedia.org/wiki/ASCII).
 
 In other words, val must only contain these characters:
 
     ! " # $ % & ' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ?
     @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \ ] ^ _
-    ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~  
+    ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~
 
 ``` javascript
 this.validateBody('command')
@@ -715,7 +715,7 @@ this.validateBody('email')
 
 Ensures that val is a hex color string.
 
-Accepts both 6-digit and 3-digit hex colors 
+Accepts both 6-digit and 3-digit hex colors
 with and without a leading '#' char.
 
 These are all valid: `'#333333'`, `'#333'`, `333333`, `333`.
@@ -903,7 +903,7 @@ curl http://localhost:3000/?nums=42&nums=42&nums=42
 
 #### .toBoolean()
 
-Coerces val into boolean `true` | `false`. 
+Coerces val into boolean `true` | `false`.
 
 Simply uses `!!val`, so note that these will all coerce into `false`:
 
@@ -936,7 +936,7 @@ this.validateBody('num')
 
 Converts val to float, throws if it fails.
 
-Note: it uses `Number.parseFloat(val)` internally, so you will have to 
+Note: it uses `Number.parseFloat(val)` internally, so you will have to
 chain `isFiniteNumber()` after it if you don't want `Infinity`:
 
 - `Number.parseFloat('Infinity') => Infinity`
@@ -969,7 +969,7 @@ this.validateBody('num')
 
 Calls `val.toString()` or sets it to empty string `""` if it is falsey.
 
-Note: If val is truthy but does not have a `.toString()` method, 
+Note: If val is truthy but does not have a `.toString()` method,
 like if val is `Object.create(null)`, then koa-bouncer will break since this
 is undefined behavior that koa-bouncer does not want to make assumptions about.
 
@@ -980,7 +980,7 @@ is undefined behavior that koa-bouncer does not want to make assumptions about.
 Trims whitespace off the left and right side of val which **must** be a string.
 
 You almost always use this for string user-input (aside from passwords) since
-leading/trailing whitespace is almost always a mistake or extraneous. 
+leading/trailing whitespace is almost always a mistake or extraneous.
 
 **You do not want to call it on the user's password** since space is perfectly
 legal and if you trim user passwords you will hash a password that the
@@ -998,7 +998,7 @@ this.validateBody('username')
 
 #### .fromJson([tip])
 
-Parses val into a JSON object. 
+Parses val into a JSON object.
 
 Fails if it is invalid JSON or if it is not a string.
 
@@ -1012,7 +1012,7 @@ this.validateBody('data')
 
 Passes val into given `fn` and sets val to the result of `fn(val)`.
 
-General-purpose tool for transforming the val. 
+General-purpose tool for transforming the val.
 
 Almost all the validator methods that koa-bouncer provides are just convenience
 methods on top of `.tap` and `.checkPred`, so use these methods to implement
@@ -1097,6 +1097,10 @@ curl http://localhost:3000/users?per-page=350
 ```
 
 ## Changelog
+
+### 6.0.0
+
+- Supports Koa 2 by default instead of Koa 1.
 
 ### 5.1.0
 

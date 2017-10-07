@@ -6,6 +6,11 @@
   "scripts": {
     "test":
       "NODE_ENV=test mocha --reporter spec --compilers js:babel-core/register",
+    "patch": "npm version patch && npm publish",
+    "minor": "npm version minor && npm publish",
+    "major": "npm version major && npm publish",
+    "postpublish": "git push origin master --follow-tags",
+    "deploy": "git pull --rebase origin master && git push origin master",
     "pretty-fix": "./node_modules/.bin/prettier --write \"{src,test}/**/*.js\""
   },
   "repository": {
