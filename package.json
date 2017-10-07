@@ -4,8 +4,7 @@
   "description": "A parameter validation library for Koa routes",
   "main": "src/index.js",
   "scripts": {
-    "test":
-      "NODE_ENV=test mocha --reporter spec --compilers js:babel-core/register",
+    "test": "NODE_ENV=test mocha --reporter spec --compilers js:babel-core/register",
     "patch": "npm version patch && npm publish",
     "minor": "npm version minor && npm publish",
     "major": "npm version major && npm publish",
@@ -17,7 +16,10 @@
     "type": "git",
     "url": "https://github.com/danneu/koa-bouncer"
   },
-  "keywords": ["validation", "koa"],
+  "keywords": [
+    "validation",
+    "koa"
+  ],
   "author": "Dan Neumann <danrodneu@gmail.com> (https://github.com/danneu)",
   "license": "MIT",
   "bugs": {
@@ -26,9 +28,9 @@
   "homepage": "https://github.com/danneu/koa-bouncer",
   "dependencies": {
     "better-assert": "^1.0.2",
-    "debug": "^2.1.2",
+    "debug": "^3.1.0",
     "lodash": "^4.0.0",
-    "validator": "^5.4.0"
+    "validator": "^9.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.9.0",
@@ -45,7 +47,10 @@
     "supertest": "^1.1.0"
   },
   "babel": {
-    "presets": ["es2015", "stage-0"]
+    "presets": [
+      "es2015",
+      "stage-0"
+    ]
   },
   "prettier": {
     "semi": false,
