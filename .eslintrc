@@ -1,12 +1,13 @@
 {
   "root": true,
   "rules": {
-    "indent": [ 2, 2 ],
-    "quotes": [ 2, "single" ],
-    "linebreak-style": [ 2, "unix" ],
-    "semi": [ 2, "always" ],
+    "indent": [2, 2],
+    "quotes": [2, "single"],
+    "linebreak-style": [2, "unix"],
+    "comma-dangle": [2, "always-multiline"],
+    "semi": [2, "never"],
     "no-console": 0,
-    "no-unused-vars": [2, {"argsIgnorePattern": "_"}]
+    "no-unused-vars": [2, { "argsIgnorePattern": "_" }]
   },
   "env": {
     "es6": true,
