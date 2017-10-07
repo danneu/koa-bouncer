@@ -11,7 +11,7 @@ const bouncer = require('../src/index.js');
 // returns 418 response if it catches a ValidationError
 // for easy supertest testing
 // TODO: find a better way to test koa-bouncer
-var exposeBouncer = async function (ctx, next) {
+var exposeBouncer = async (ctx, next) => {
   try {
     await next();
     ctx.status = 200;
@@ -708,10 +708,10 @@ describe('Validator#isFiniteNumber', () => {
 describe('Validator#toFiniteFloat', () => {
   it('succeeds on "1e+50"', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '1e+50';
-      this.validateQuery('test').toFiniteFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = '1e+50';
+      ctx.validateQuery('test').toFiniteFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -722,10 +722,10 @@ describe('Validator#toFiniteFloat', () => {
 
   it('fails on Infinity (float)', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = Infinity;
-      this.validateQuery('test').toFiniteFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = Infinity;
+      ctx.validateQuery('test').toFiniteFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -735,10 +735,10 @@ describe('Validator#toFiniteFloat', () => {
 
   it('fails on "Infinity" (string)', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'Infinity';
-      this.validateQuery('test').toFiniteFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = 'Infinity';
+      ctx.validateQuery('test').toFiniteFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -748,10 +748,10 @@ describe('Validator#toFiniteFloat', () => {
 
   it('handles val that already is a float', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 5.67;
-      this.validateQuery('test').toFiniteFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = 5.67;
+      ctx.validateQuery('test').toFiniteFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -762,10 +762,10 @@ describe('Validator#toFiniteFloat', () => {
 
   it('passes when val can parse into float', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '05.67';
-      this.validateQuery('test').toFiniteFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = '05.67';
+      ctx.validateQuery('test').toFiniteFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -776,9 +776,9 @@ describe('Validator#toFiniteFloat', () => {
 
   it('passes when val has illegal chars even though parseFloat would work', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = '05.67aasdfsad';
-      this.validateQuery('test').toFiniteFloat();
+    app.use(async (ctx) => {
+      ctx.vals.test = '05.67aasdfsad';
+      ctx.validateQuery('test').toFiniteFloat();
     });
     request(app.listen())
       .get('/')
@@ -788,9 +788,9 @@ describe('Validator#toFiniteFloat', () => {
 
   it('throws ValidationError if val cannot parse into float', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 'abc';
-      this.validateQuery('test').toFiniteFloat();
+    app.use(async (ctx) => {
+      ctx.vals.test = 'abc';
+      ctx.validateQuery('test').toFiniteFloat();
     });
     request(app.listen())
       .get('/')
@@ -804,10 +804,10 @@ describe('Validator#toFiniteFloat', () => {
 describe('Validator#toFloat', () => {
   it('allows Infinity (already a float)', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = Infinity;
-      this.validateQuery('test').toFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = Infinity;
+      ctx.validateQuery('test').toFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -818,10 +818,10 @@ describe('Validator#toFloat', () => {
 
   it('allows " Infinity " (string)', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = ' Infinity ';
-      this.validateQuery('test').toFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = ' Infinity ';
+      ctx.validateQuery('test').toFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
@@ -835,10 +835,10 @@ describe('Validator#toFloat', () => {
 
   it('handles val that already is a float', done => {
     const app = makeApp();
-    app.use(function*() {
-      this.vals.test = 5.67;
-      this.validateQuery('test').toFloat();
-      this.body = this.vals.test.toString();
+    app.use(async (ctx) => {
+      ctx.vals.test = 5.67;
+      ctx.validateQuery('test').toFloat();
+      ctx.body = ctx.vals.test.toString();
     });
     request(app.listen())
       .get('/')
