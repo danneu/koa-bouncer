@@ -19,24 +19,24 @@ for routing.
 
 If you'd like to see how koa-bouncer looks in a real (demo) Koa application,
 check out my [koa-skeleton](https://github.com/danneu/koa-skeleton) repository.
-
 <br style="clear: both;">
-
-- **Note**: These docs have not yet been fully upgraded to demonstrate koa 2
-  even though koa-bouncer now works with koa 2. Please excuse the koa 1 style
-  middleware and the usage of `this` instead of `ctx`.
 
 ## Example
 
+Using koa-router for routing
+
 ``` javascript
+const Koa = require('koa');
+const Router = require('koa-router')
 const bouncer = require('koa-bouncer');
-const app = require('koa')();
+const app = new Koa();
+const router = new Router();
 
 // extends the Koa context with some methods
 app.use(bouncer.middleware());
 
 // POST /users - create user endpoint
-app.post('/users', async (ctx) {
+router.post('/users', async (ctx) => {
 
   // validate input
 
@@ -59,7 +59,7 @@ app.post('/users', async (ctx) {
   ctx.validateBody('password2')
     .required('Password confirmation required')
     .isString()
-    .eq(this.vals.password1, 'Passwords must match')
+    .eq(ctx.vals.password1, 'Passwords must match')
 
   // running database query last to give the other validations a chance to fail
   ctx.validateBody('uname')
@@ -72,13 +72,18 @@ app.post('/users', async (ctx) {
   console.log(ctx.vals)
 
   const user = await db.insertUser({
-    uname: this.vals.uname,
-    email: this.vals.email,
-    password: this.vals.password1
+    uname: ctx.vals.uname,
+    email: ctx.vals.email,
+    password: ctx.vals.password1
   })
 
-  this.redirect('/users/' + user.id)
+  ctx.redirect(`/users/${user.id}`)
 })
+
+app
+  .use(router.routes())
+  .use(router.allowedMethods());
+  
 ```
 
 ## The general idea
@@ -92,7 +97,7 @@ that you can catch upstream. For example, maybe you want to redirect back
 to the form, show a tip, and repopulate the form with the user's progress.
 
 If validation succeeds, then you can access the validated/transformed
-parameters in a `this.vals` map that gets populated during validation.
+parameters in a `ctx.vals` map that gets populated during validation.
 
 ## Usage
 
@@ -122,7 +127,7 @@ make assertions against it.
 Just by calling these methods, they will begin populating `ctx.vals`:
 
 ``` javascript
-app.get('/search', async (ctx) {
+router.get('/search', async (ctx) => {
   ctx.validateQuery('keyword')
   ctx.validateQuery('sort')
   ctx.body = JSON.stringify(ctx.vals)
@@ -146,7 +151,7 @@ if the parameter is undefined (not given by user) or if it is an empty
 string.
 
 ``` javascript
-app.get('/search', async (ctx) => {
+router.get('/search', async (ctx) => {
   ctx.validateQuery('keyword').required().isString().trim()
   ctx.validateQuery('sort').toArray()
   ctx.body = JSON.stringify(ctx.vals)
@@ -175,30 +180,30 @@ back to whatever the previous page was and populate a temporary flash
 object with the error and their parameters so that we can repopulate the form.
 
 ``` javascript
-app.use(function*(next) {
+app.use(async (ctx, next) => {
   try {
-    yield* next;
+    await next();
   } catch(err) {
     if (err instanceof bouncer.ValidationError) {
-      this.flash = {
+      ctx.flash = {
         message: ['danger', err.message],
-        params: this.request.body
+        params: ctx.request.body
       };
-      return this.redirect('back');
+      return ctx.redirect('back');
     }
     throw err;
   }
 });
 
-app.post('/users', function*() {
-  this.validateBody('username')
+router.post('/users', async (ctx) => {
+  ctx.validateBody('username')
     .required('Username is required')
     .isString()
     .trim()
     .isLength(3, 15, 'Username must be 3-15 chars');
 
-  var user = yield database.insertUser(this.vals.username);
-  this.body = 'You successfully registered';
+  const user = await database.insertUser(ctx.vals.username);
+  ctx.body = 'You successfully registered';
 });
 ```
 
@@ -219,25 +224,23 @@ Here are the default ones:
 
 ``` javascript
 app.use(bouncer.middleware({
-  getParams: function(ctx) { return ctx.params; },
-  getQuery: function(ctx) { return ctx.query; },
-  getBody: function(ctx) { return ctx.request.body; }
+  getParams({params}) { return params; },
+  getQuery({query}) { return query; },
+  getBody({request}) { return request.body; }
 }));
 ```
 
 You can override these if the validators need to look in a different place
-to fetch the respective keys when calling the `validateParams`, `validateQuery`,
+to fetch the respective keys when calling the `validateParam`, `validateQuery`,
 and `validateBody` methods.
 
 You can always define custom validators via `Validator.addMethod`:
 
 ``` javascript
-var Validator = require('koa-bouncer').Validator;
+const Validator = require('koa-bouncer').Validator;
 
-Validator.addMethod('isValidBitcoinAddress', function(tip) {
+Validator.addMethod('isValidBitcoinAddress', function(tip = 'Invalid Bitcoin address') {
   // Will thread the tip through the nested assertions
-  var tip = tip || 'Invalid Bitcoin address';
-
   this
     .isString(tip)
     .trim()
@@ -255,7 +258,7 @@ Maybe put that in a `custom_validations.js` file and remember to load it.
 Now you can use the custom validator method in a route or middleware:
 
 ``` javascript
-this.validateBody('address')
+ctx.validateBody('address')
   .required()
   .isValidBitcoinAddress();
 ```
@@ -264,11 +267,11 @@ These chains always return the underlying validator instance. You can access
 its value at any instant with `.val()`.
 
 ``` javascript
-let validator = this.validateBody('address')
+const validator = ctx.validateBody('address')
   .required()
   .isValidBitcoinAddress();
 
-console.log('current value of this.vals['address'] is', validator.val());
+console.log("current value of ctx.vals['address'] is", validator.val());
 ```
 
 Here's how you'd write a validator method that transforms the underlying value:
@@ -291,11 +294,11 @@ chaining things on to the validator.
 Returns the current value currently inside the validator.
 
 ``` javascript
-router.get('/search', function*() {
-  const validator1 = this.validateQuery('q').required();
-  const validator2 = this.validateQuery('sort').optional();
+router.get('/search', async (ctx) => {
+  const validator1 = ctx.validateQuery('q').required();
+  const validator2 = ctx.validateQuery('sort').optional();
 
-  this.body = JSON.stringify([validator1.val(), validator2.val()]);
+  ctx.body = JSON.stringify([validator1.val(), validator2.val()]);
 });
 ```
 
@@ -305,7 +308,7 @@ curl http://localhost:3000/search?q=hello&sort=created_at
 ```
 
 I rarely use this method inside a route and prefer to access
-values from the `this.vals` object. So far I only use it internally when
+values from the `ctx.vals` object. So far I only use it internally when
 implementing validator functions.
 
 #### .required([tip])
@@ -313,7 +316,7 @@ implementing validator functions.
 Only fails if val is `undefined`. Required the user to at least provie
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required('Must provide username')
 ```
 
@@ -325,33 +328,33 @@ at this point, then skip over the rest of the methods.
 This is so that you can validate a val only if user provided one.
 
 ``` javascript
-this.validateBody('email')
+ctx.validateBody('email')
   .optional()
-  .isEmail('Invalid email format') // Only called if this.request.body is `undefined`
+  .isEmail('Invalid email format') // Only called if ctx.request.body is `undefined`
 ```
 
 ``` javascript
-this.validateBody('email')
+ctx.validateBody('email')
   .tap(x => 'hello@example.com')
   .optional()
   .isEmail()  // Always called since we are ensuring that val is always defined
 ```
 
-Mutating `this.vals` to define a val inside an optional validator will
+Mutating `ctx.vals` to define a val inside an optional validator will
 turn off the validator's `validator.isOptional()` flag.
 
 ``` javascript
-this.validateBody('email').optional();
-this.vals.email = 'hello@example.com';
-this.validateBody('email').isEmail();  // This will run
+ctx.validateBody('email').optional();
+ctx.vals.email = 'hello@example.com';
+ctx.validateBody('email').isEmail();  // This will run
 ```
 
 You can see the optional state of a validator with its `.isOptional()` method:
 
 ``` javascript
-const validator = this.validateBody('email').optional();
+const validator = ctx.validateBody('email').optional();
 console.log(validator.isOptional());  //=> true
-this.vals.email = 'hello@example.com';
+ctx.vals.email = 'hello@example.com';
 console.log(validator.isOptional());  //=> false
 validator.isEmail();  // This will run
 ```
@@ -368,7 +371,7 @@ succeeds on empty string. This is also usually the behavior you want.
 Ensure val is included in given array (=== comparison).
 
 ``` javascript
-this.validateBody('role')
+ctx.validateBody('role')
   .required('Must provide a role')
   .isIn(['banned', 'member', 'mod', 'admin'], 'Invalid role')
 ```
@@ -378,7 +381,7 @@ this.validateBody('role')
 Ensure val is not included in given array (=== comparison).
 
 ``` javascript
-this.validateBody('favorite-fruit')
+ctx.validateBody('favorite-fruit')
   .isNotIn(['apple', 'pomegranate'], 'You cannot choose forbidden fruit')
 ```
 
@@ -387,7 +390,7 @@ this.validateBody('favorite-fruit')
 If val is `undefined`, set it to defaultVal.
 
 ``` javascript
-this.validateBody('multiplier')
+ctx.validateBody('multiplier')
   .defaultTo(1.0)
   .toFiniteFloat('multiplier must be a valid number')
 ```
@@ -400,7 +403,7 @@ Note: Also works with strings created via `new String()`
 where `typeof new String() === 'object'`.
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .isString()
 ```
 
@@ -412,7 +415,7 @@ they add explicit clarity to the validation step.
 Ensure val is an Array.
 
 ``` javascript
-this.validateQuery('recipients')
+ctx.validateQuery('recipients')
   .isArray('recipients must be an array')
 ```
 
@@ -421,23 +424,23 @@ curl http://localhost:3000/?recipients=joey
 => ValidationError
 
 curl http://localhost:3000/?recipients=joey&recipients=kate&recipients=max
-=> 200 OK, this.vals => ['joey', 'kate', 'max']
+=> 200 OK, ctx.vals => ['joey', 'kate', 'max']
 ```
 
 Note: The previous example can be improved with `.toArray`.
 
 ``` javascript
-this.validateQuery('recipients')
+ctx.validateQuery('recipients')
   .toArray()
   .isArray('recipients must be an array')
 ```
 
 ``` bash
 curl http://localhost:3000/?recipients=joey
-=> 200 OK, this.vals.recipients => ['joey']
+=> 200 OK, ctx.vals.recipients => ['joey']
 
 curl http://localhost:3000/?recipients=joey&recipients=kate&recipients=max
-=> 200 OK, this.vals.recipients => ['joey', 'kate', 'max']
+=> 200 OK, ctx.vals.recipients => ['joey', 'kate', 'max']
 ```
 
 #### .eq(otherVal::Number, [tip])
@@ -445,7 +448,7 @@ curl http://localhost:3000/?recipients=joey&recipients=kate&recipients=max
 Ensures `val === otherVal`.
 
 ``` javascript
-this.validateBody('house-edge')
+ctx.validateBody('house-edge')
   .eq(0.01, 'House edge must be 1%')
 ```
 
@@ -454,7 +457,7 @@ this.validateBody('house-edge')
 Ensures `val > otherVal`.
 
 ``` javascript
-this.validateBody('hp')
+ctx.validateBody('hp')
   .gt(0, 'Player must have 1 or more hit points')
 ```
 
@@ -463,7 +466,7 @@ this.validateBody('hp')
 Ensures `val >= otherVal`.
 
 ``` javascript
-this.validateBody('age')
+ctx.validateBody('age')
   .gte(18, 'Must be 18 or older')
 ```
 
@@ -472,7 +475,7 @@ this.validateBody('age')
 Ensures `val < otherVal`.
 
 ``` javascript
-this.validateBody('pet-count')
+ctx.validateBody('pet-count')
   .lt(10, 'You must have fewer than 10 pets')
 ```
 
@@ -481,7 +484,7 @@ this.validateBody('pet-count')
 Ensures `val <= otherVal`.
 
 ``` javascript
-this.validateBody('house-edge')
+ctx.validateBody('house-edge')
   .lte(0.10, 'House edge cannot be higher than 10%')
 ```
 
@@ -490,7 +493,7 @@ this.validateBody('house-edge')
 Ensure val is a number `min <= val <= max` (inclusive on both sides).
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required('Username required')
   .isString()
   .trim()
@@ -503,7 +506,7 @@ Ensures val is already an integer and that it is within integer range
 (`Number.MIN_SAFE_INTEGER <= val <= Number.MAX_SAFE_INTEGER`).
 
 ``` javascript
-this.validateBody('age')
+ctx.validateBody('age')
   .isInt('Age must be an integer')
 ```
 
@@ -516,7 +519,7 @@ use the global `isFinite(val)` function because `isFinite(val)` first
 parses the number before checking if it is finite. `isFinite('42') => true`.
 
 ``` javascript
-this.validateBody('num')
+ctx.validateBody('num')
   .tap(n => Infinity)
   .isFiniteNumber()  // will always fail
 ```
@@ -528,7 +531,7 @@ Ensures that val matches the given regular expression.
 You must ensure that val is a string.
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required('Username is required')
   .isString()
   .trim()
@@ -549,7 +552,7 @@ Note: It is often useful to chain `.notMatch` after a `.match` to refine
 the validation.
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required('Username is required')
   .isString()
   .trim()
@@ -574,17 +577,17 @@ based on some external condition.
 Example: Ensure username is not taken:
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required('Username required')
   .isString()
   .trim()
-  .checkNot(yield database.findUserByUsername(this.vals.uname), 'Username taken')
+  .checkNot(await database.findUserByUsername(ctx.vals.uname), 'Username taken')
 ```
 
 Example: Ensure that the email system is online only if they provide an email:
 
 ``` javascript
-this.validateBody('email')
+ctx.validateBody('email')
   .optional()
   .check(config.EMAIL_SYSTEM_ONLINE, 'Email system not ready, please try later')
 ```
@@ -602,7 +605,7 @@ arbitrary assertions on the val.
 Example: Ad-hoc predicate function:
 
 ``` javascript
-this.validateBody('num')
+ctx.validateBody('num')
   .required()
   .toInt()
   .checkPred(n => n % 2 === 0, 'Your num must be divisible by two')
@@ -615,7 +618,7 @@ function isValidBitcoinAddress(addr) {
   // ...
 }
 
-this.validateBody('bitcoin-address')
+ctx.validateBody('bitcoin-address')
   .required('Bitcoin address required')
   .isString()
   .trim()
@@ -627,7 +630,7 @@ this.validateBody('bitcoin-address')
 Ensures that val is a string that contains only letters a-z (case insensitive).
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required()
   .isString()
   .trim()
@@ -640,7 +643,7 @@ Ensures that val is a string that contains only letters a-z (case insensitive)
 and numbers 0-9.
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required()
   .isString()
   .trim()
@@ -652,7 +655,7 @@ this.validateBody('username')
 Ensures that val is a string that contains only numbers 0-9.
 
 ``` javascript
-this.validateBody('serial-number')
+ctx.validateBody('serial-number')
   .required()
   .isString()
   .trim()
@@ -671,7 +674,7 @@ In other words, val must only contain these characters:
     ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~
 
 ``` javascript
-this.validateBody('command')
+ctx.validateBody('command')
   .required()
   .isString()
   .trim()
@@ -685,7 +688,7 @@ Ensures that val is a base64-encoded string.
 Note: An empty string (`""`) is considered valid.
 
 ``` javascript
-this.validateBody('data')
+ctx.validateBody('data')
   .required()
   .isString()
   .trim()
@@ -697,7 +700,7 @@ this.validateBody('data')
 Ensures that val is a valid string email address.
 
 ``` javascript
-this.validateBody('email')
+ctx.validateBody('email')
   .optional()
   .isString()
   .trim()
@@ -714,7 +717,7 @@ with and without a leading '#' char.
 These are all valid: `'#333333'`, `'#333'`, `333333`, `333`.
 
 ``` javascript
-this.validateBody('background-color')
+ctx.validateBody('background-color')
   .required()
   .isString()
   .trim()
@@ -736,11 +739,11 @@ koa-bouncer can handle any of these:
     .isUuid();
 
 ``` javascript
-router.get('/things/:uuid', function*() {
-  this.validateParam('id')
+router.get('/things/:uuid', async (ctx) => {
+  ctx.validateParam('uuid')
     .isUuid('v3')
 
-  const thing = yield database.findThing(this.vals.id);
+  const thing = await database.findThing(ctx.vals.uuid);
 });
 ```
 
@@ -751,7 +754,7 @@ Ensures that val is a valid, well-formed JSON string.
 Works by simply wrapping `JSON.parse(val)` with a try/catch.
 
 ``` javascript
-this.validateBody('data')
+ctx.validateBody('data')
   .isJson()
 ```
 
@@ -767,16 +770,16 @@ Used internally by validator methods to update the value. Can't think
 of a reason you'd actually use it inside a route.
 
 ``` javascript
-this.validateQuery('test')
+ctx.validateQuery('test')
   .set(42)
 ```
 
 ``` bash
 curl http://localhost:3000
-// 200 OK, this.vals.test => 42
+// 200 OK, ctx.vals.test => 42
 
 curl http://localhost:3000/?test=foo
-// 200 OK, this.vals.test => 42
+// 200 OK, ctx.vals.test => 42
 ```
 
 Note: `.set(42)` is equivalent to `.tap(x => 42)`.
@@ -790,20 +793,20 @@ If val is not already an array, then it puts it into an array of one item.
 If val is undefined, then sets it to empty array `[]`.
 
 ``` javascript
-this.validateQuery('friends')
+ctx.validateQuery('friends')
   .toArray()
   .isArray()  // Always succeeds
 ```
 
 ``` bash
 curl http://localhost:3000/
-// 200 OK, this.vals.friends => []
+// 200 OK, ctx.vals.friends => []
 
 curl http://localhost:3000/?friends=joey
-// 200 OK, this.vals.friends => ['joey']
+// 200 OK, ctx.vals.friends => ['joey']
 
 curl http://localhost:3000/?friends=joey&friends=kate
-// 200 OK, this.vals.friends => ['joey', 'kate']
+// 200 OK, ctx.vals.friends => ['joey', 'kate']
 ```
 
 #### .toInt([tip])
@@ -817,23 +820,23 @@ Uses `parseInt(val, 10)`, so note that decimals and extraneous characters
 will be truncated off the end of the value.
 
 ``` javascript
-this.validateQuery('age')
+ctx.validateQuery('age')
   .required('Must provide your age')
   .toInt('Invalid age')
 ```
 
 ``` bash
 curl http://localhost:3000/?age=42
-// 200 OK, this.vals.age => 42
+// 200 OK, ctx.vals.age => 42
 
 curl http://localhost:3000/?age=-42
-// 200 OK, this.vals.age => -42 (parses negative integer)
+// 200 OK, ctx.vals.age => -42 (parses negative integer)
 
 curl http://localhost:3000/?age=42.123
-// 200 OK, this.vals.age => 42 (truncation)
+// 200 OK, ctx.vals.age => 42 (truncation)
 
 curl http://localhost:3000/?age=42abc
-// 200 OK, this.vals.age => 42 (truncation)
+// 200 OK, ctx.vals.age => 42 (truncation)
 
 curl http://localhost:3000/?age=9007199254740992
 // ValidationError (out of integer range)
@@ -849,19 +852,19 @@ Fails if any item cannot be parsed into an integer or if any parse into
 integers that are out of safe integer range.
 
 ``` javascript
-this.validateQuery('guesses')
+ctx.validateQuery('guesses')
   .toInts('One of your guesses was invalid')
 ```
 
 ``` bash
 curl http://localhost:3000/
-// 200 OK, this.vals.guesses => []
+// 200 OK, ctx.vals.guesses => []
 
 curl http://localhost:3000/?guesses=42
-// 200 OK, this.vals.guesses => [42]
+// 200 OK, ctx.vals.guesses => [42]
 
 curl http://localhost:3000/?guesses=42&guesses=100
-// 200 OK, this.vals.guesses => [42, 100]
+// 200 OK, ctx.vals.guesses => [42, 100]
 
 curl http://localhost:3000/?guesses=42&guesses=100&guesses=9007199254740992
 // ValidationError (out of safe integer range)
@@ -880,7 +883,7 @@ Removes duplicate items from val which must be an array.
 You must ensure that val is already an array.
 
 ``` javascript
-this.validateQuery('nums')
+ctx.validateQuery('nums')
   .toArray()
   .toInts()
   .uniq()
@@ -888,10 +891,10 @@ this.validateQuery('nums')
 
 ```bash
 curl http://localhost:3000/?nums=42
-// 200 OK, this.vals.nums => [42]
+// 200 OK, ctx.vals.nums => [42]
 
 curl http://localhost:3000/?nums=42&nums=42&nums=42
-// 200 OK, this.vals.nums => [42]
+// 200 OK, ctx.vals.nums => [42]
 ```
 
 #### .toBoolean()
@@ -907,7 +910,7 @@ Simply uses `!!val`, so note that these will all coerce into `false`:
 - `undefined`
 
 ``` javascript
-this.validateBody('remember-me')
+ctx.validateBody('remember-me')
   .toBoolean()
 ```
 
@@ -920,7 +923,7 @@ In most application, you want this over .toFloat / .toFiniteFloat.
 A parsed decimal will always pass a .isFiniteNumber() check.
 
 ``` javascript
-this.validateBody('num')
+ctx.validateBody('num')
   .toDecimal()
   .isFiniteNumber() // <-- Redundant
 ```
@@ -943,7 +946,7 @@ Use .toDecimal instead of .toFloat when you only want to allow decimal numbers
 rather than the whole float shebang.
 
 ``` javascript
-this.validateBody('num')
+ctx.validateBody('num')
   .toFloat()
   .isFiniteNumber()
 ```
@@ -953,7 +956,7 @@ this.validateBody('num')
 Shortcut for:
 
 ``` javascript
-this.validateBody('num')
+ctx.validateBody('num')
   .toFloat()
   .isFiniteNumber()
 ```
@@ -983,7 +986,7 @@ koa-bouncer will break if you do not ensure that val is a string when you
 call `.trim()`.
 
 ``` javascript
-this.validateBody('username')
+ctx.validateBody('username')
   .required()
   .isString()
   .trim();
@@ -996,7 +999,7 @@ Parses val into a JSON object.
 Fails if it is invalid JSON or if it is not a string.
 
 ``` javascript
-this.validateBody('data')
+ctx.validateBody('data')
   .required()
   .fromJson()
 ```
@@ -1016,7 +1019,7 @@ your own logic as you please.
 `tip` is used if `fn(val)` throws a ValidationError error.
 
 ``` javascript
-this.validateBody('direction')
+ctx.validateBody('direction')
   .required('Direction is required')
   .isString()
   .trim()
@@ -1026,7 +1029,7 @@ this.validateBody('direction')
 
 ``` bash
 curl http://localhost:3000/?direction=WeST
-=> 200 OK, this.vals.direction => 'west'
+=> 200 OK, ctx.vals.direction => 'west'
 ```
 
 #### .encodeBase64([tip])
@@ -1036,9 +1039,9 @@ Converts val string into base64 encoded string.
 Empty string encodes to empty string.
 
 ``` javascript
-this.vals.message = 'hello';
+ctx.vals.message = 'hello';
 
-this.validateBody('message')
+ctx.validateBody('message')
   .encodeBase64()
   .val(); //=> 'aGVsbG8='
 ```
@@ -1050,9 +1053,9 @@ Decodes val string from base64 to string.
 Empty string decodes to empty string.
 
 ``` javascript
-this.vals.message = 'aGVsbG8=';
+ctx.vals.message = 'aGVsbG8=';
 
-this.validateBody('message')
+ctx.validateBody('message')
   .decodeBase64()
   .val(); //=> 'hello'
 ```
@@ -1067,8 +1070,8 @@ ie. If val < min, then val is set to min. If val > max, then val is set to max.
 Note: You must first ensure that val is a number.
 
 ``` javascript
-router.get('/users', function*(next) {
-  this.validateQuery('per-page')
+router.get('/users', async (ctx) => {
+  ctx.validateQuery('per-page')
     .defaultTo(50)
     .toInt('per-page must be an integer')
     .clamp(10, 100);
@@ -1077,16 +1080,16 @@ router.get('/users', function*(next) {
 
 ``` bash
 curl http://localhost:3000/users
-// 200 OK, this.vals['per-page'] === 50
+// 200 OK, ctx.vals['per-page'] === 50
 
 curl http://localhost:3000/users?per-page=25
-// 200 OK, this.vals['per-page'] === 25 (not clamped since it's in range)
+// 200 OK, ctx.vals['per-page'] === 25 (not clamped since it's in range)
 
 curl http://localhost:3000/users?per-page=5
-// 200 OK, this.vals['per-page'] === 10 (clamped to min)
+// 200 OK, ctx.vals['per-page'] === 10 (clamped to min)
 
 curl http://localhost:3000/users?per-page=350
-// 200 OK, this.vals['per-page'] === 100 (clamped to max)
+// 200 OK, ctx.vals['per-page'] === 100 (clamped to max)
 ```
 
 ## Changelog
