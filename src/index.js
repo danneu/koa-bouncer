@@ -569,6 +569,22 @@ Validator.addMethod('clamp', function(min, max) {
   return this
 })
 
+Validator.addMethod('includesBearer', function(regexp, tip) {
+  tip = tip || this.key + ' must be Bearer Authentication string'
+
+  const [bearer, token] = this.val().split(' ')
+
+  this.checkPred(() => 'Bearer' === bearer, tip)
+
+  this.set(token)
+  if (regexp) {
+    this.match(regexp, tip)
+  } else {
+    this.isUuid('all', tip)
+  }
+  return this
+})
+
 ////////////////////////////////////////////////////////////
 // API
 ////////////////////////////////////////////////////////////

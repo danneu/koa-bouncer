@@ -2137,6 +2137,42 @@ describe('Validator#clamp', () => {
   })
 })
 
+describe('Validator#includesBearer', function() {
+  it('works with valid Bearer Authentication string', done => {
+    const app = makeApp()
+    app.use(function(ctx) {
+      ctx.validateHeader('authorization').includesBearer()
+    })
+    request(app.listen())
+      .get('/')
+      .set('Authorization', 'Bearer dfb575ad-39a4-4800-bb37-4bcb7247a528')
+      .expect(200)
+      .end(done)
+  })
+  it('works with valid Bearer Authentication string and specified regex', done => {
+    const app = makeApp()
+    app.use(function(ctx) {
+      ctx.validateHeader('Authorization').includesBearer(/hello-world/)
+    })
+    request(app.listen())
+      .get('/')
+      .set('Authorization', 'Bearer hello-world')
+      .expect(200)
+      .end(done)
+  })
+  it('throws if contains invalid Bearer Authentication string', done => {
+    const app = makeApp()
+    app.use(function(ctx) {
+      ctx.validateHeader('authorization').includesBearer()
+    })
+    request(app.listen())
+      .get('/')
+      .set('Authorization', 'bla-bla')
+      .expect(418)
+      .end(done)
+  })
+})
+
 describe('when ctx getters return undefined', () => {
   it('getBody() does not err on member access', done => {
     const app = new koa()

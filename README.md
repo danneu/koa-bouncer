@@ -759,6 +759,17 @@ ctx.validateBody('data')
   .isJson()
 ```
 
+#### .includesBearer([regexp::RegExp], [tip])
+
+Ensures that val includes Bearer Authentication scheme (see [RFC 6750](https://tools.ietf.org/html/rfc6750)).
+
+`regexp` can be changed to your own. default is `'all'` from [isUuid](#isuuidversionstring-tip).
+
+``` javascript
+ctx.validateHeader('authorization')
+  .includesBearer()
+```
+
 ------------------------------------------------------------
 
 ### Methods that convert/mutate the val
@@ -877,7 +888,7 @@ curl http://localhost:3000/?guesses=1.2345
 // ValidationError (one guess does not parse into an int because it is a decimal)
 ```
 
-#### .uniq
+#### .uniq()
 
 Removes duplicate items from val which must be an array.
 
