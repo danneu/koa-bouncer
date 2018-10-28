@@ -569,6 +569,22 @@ Validator.addMethod('clamp', function(min, max) {
   return this
 })
 
+Validator.addMethod('includesBearer', function(regexp, tip) {
+  tip = tip || this.key + ' must be Bearer Authentication string'
+
+  const [bearer, token] = this.val().split(' ')
+
+  this.checkPred(() => 'Bearer' === bearer, tip)
+
+  this.set(token)
+  if (regexp) {
+    this.match(regexp, tip)
+  } else {
+    this.isUuid('all', tip)
+  }
+  return this
+})
+
 ////////////////////////////////////////////////////////////
 // API
 ////////////////////////////////////////////////////////////
@@ -583,6 +599,7 @@ exports.middleware = function middleware(opts = {}) {
   opts.getParams = opts.getParams || (ctx => ctx.params)
   opts.getQuery = opts.getQuery || (ctx => ctx.query)
   opts.getBody = opts.getBody || (ctx => ctx.request.body)
+  opts.getHeaders = opts.getHeaders || (ctx => ctx.request.headers)
 
   return function(ctx, next) {
     debug('Initializing koa-bouncer')
@@ -593,7 +610,7 @@ exports.middleware = function middleware(opts = {}) {
     // will return the same validator
     const validators = new Map()
 
-    ctx.validateParam = function(key) {
+    const validate = function (key, within) {
       return (
         validators.get(key) ||
         validators
@@ -604,53 +621,29 @@ exports.middleware = function middleware(opts = {}) {
               key: key,
               val:
                 ctx.vals[key] === undefined
-                  ? _.get(opts.getParams(ctx), key)
-                  : ctx.vals[key],
+                     ? _.get(within(ctx), key)
+                     : ctx.vals[key],
               vals: ctx.vals,
             })
           )
           .get(key)
       )
+    }
+
+    ctx.validateParam = function(key) {
+      return validate(key, opts.getParams)
     }
 
     ctx.validateQuery = function(key) {
-      return (
-        validators.get(key) ||
-        validators
-          .set(
-            key,
-            new Validator({
-              ctx,
-              key: key,
-              val:
-                ctx.vals[key] === undefined
-                  ? _.get(opts.getQuery(ctx), key)
-                  : ctx.vals[key],
-              vals: ctx.vals,
-            })
-          )
-          .get(key)
-      )
+      return validate(key, opts.getQuery)
     }
 
     ctx.validateBody = function(key) {
-      return (
-        validators.get(key) ||
-        validators
-          .set(
-            key,
-            new Validator({
-              ctx,
-              key: key,
-              val:
-                ctx.vals[key] === undefined
-                  ? _.get(opts.getBody(ctx), key)
-                  : ctx.vals[key],
-              vals: ctx.vals,
-            })
-          )
-          .get(key)
-      )
+      return validate(key, opts.getBody)
+    }
+
+    ctx.validateHeader = function(key) {
+      return validate(key.toLowerCase(), opts.getHeaders)
     }
 
     ctx.check = function(result, tip) {
