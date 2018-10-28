@@ -273,6 +273,25 @@ describe('Parameter getter override', () => {
         .end(done)
     })
   })
+
+  describe('Validation#getHeaders', () => {
+    it('allows override', done => {
+      const app = makeApp({
+        getHeaders: () => {
+          return { test: 'ccc' }
+        },
+      })
+      app.use(function(ctx) {
+        ctx.validateHeader('test')
+        ctx.body = ctx.vals.test
+      })
+      request(app.listen())
+        .get('/')
+        .expect(200)
+        .expect('ccc')
+        .end(done)
+    })
+  })
 })
 
 ////////////////////////////////////////////////////////////

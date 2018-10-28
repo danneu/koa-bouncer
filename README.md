@@ -226,7 +226,8 @@ Here are the default ones:
 app.use(bouncer.middleware({
   getParams({params}) { return params; },
   getQuery({query}) { return query; },
-  getBody({request}) { return request.body; }
+  getBody({request}) { return request.body; },
+  getHeaders({request}) { return request.headers; }
 }));
 ```
 
