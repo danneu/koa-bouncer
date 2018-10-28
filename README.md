@@ -21,6 +21,61 @@ If you'd like to see how koa-bouncer looks in a real (demo) Koa application,
 check out my [koa-skeleton](https://github.com/danneu/koa-skeleton) repository.
 <br style="clear: both;">
 
+## Table of Contents
+- [Example](#example)
+- [The general idea](#the-general-idea)
+- [Usage](#usage)
+- [Validator methods](#validator-methods)
+  * [.val](#val)
+  * [.required](#requiredtip)
+  * [.optional](#optional)
+  * [.isIn](#isinarray-tip)
+  * [.isNotIn](#isnotinarray-tip)
+  * [.defaultTo](#defaulttodefaultval)
+  * [.isString](#isstringtip)
+  * [.isArray](#isarraytip)
+  * [.eq](#eqothervalnumber-tip)
+  * [.gt](#gtothervalnumber-tip)
+  * [.gte](#gteothervalnumber-tip)
+  * [.lt](#ltothervalnumber-tip)
+  * [.lte](#lteothervalnumber-tip)
+  * [.isLength](#islengthminint-maxint-tip)
+  * [.isInt](#isinttip)
+  * [.isFiniteNumber](#isfinitenumbertip)
+  * [.match](#matchregexpregexp-tip)
+  * [.notMatch](#notmatchregexpregexp-tip)
+  * [.check](#checkresult-tip-and-checknotresult-tip)
+  * [.checkPred](#checkpredfn-tip-and-checkprednotfn-tip)
+  * [.isAlpha](#isalphatip)
+  * [.isAlphanumeric](#isalphanumerictip)
+  * [.isNumeric](#isnumerictip)
+  * [.isAscii](#isasciitip)
+  * [.isBase64](#isbase64tip)
+  * [.isEmail](#isemailtip)
+  * [.isHexColor](#ishexcolortip)
+  * [.isUuid](#isuuidversionstring-tip)
+  * [.isJson](#isjsontip)
+  * [.includesBearer](#includesbearerregexpregexp-tip)
+- [Methods that convert/mutate the val](#methods-that-convertmutate-the-val)
+  * [.set](#setnewval)
+  * [.toArray](#toarray)
+  * [.toInt](#tointtip)
+  * [.toInts](#tointstip)
+  * [.uniq](#uniq)
+  * [.toBoolean](#toboolean)
+  * [.toDecimal](#todecimaltip)
+  * [.toFloat](#tofloattip)
+  * [.toFiniteFloat](#tofinitefloattip)
+  * [.toString](#tostring)
+  * [.trim](#trim)
+  * [.fromJson](#fromjsontip)
+  * [.tap](#tapfn-tip)
+  * [.encodeBase64](#encodebase64tip)
+  * [.decodeBase64](#decodebase64tip)
+  * [.clamp](#clampminnumber-maxnumber)
+- [Changelog](#changelog)
+- [License](#license)
+
 ## Example
 
 Using koa-router for routing
@@ -772,9 +827,9 @@ ctx.validateHeader('authorization')
 
 ------------------------------------------------------------
 
-### Methods that convert/mutate the val
+## Methods that convert/mutate the val
 
-#### .set(newVal)
+### .set(newVal)
 
 Sets val to arbitrary value `newVal`.
 
@@ -796,7 +851,7 @@ curl http://localhost:3000/?test=foo
 
 Note: `.set(42)` is equivalent to `.tap(x => 42)`.
 
-#### .toArray()
+### .toArray()
 
 Converts val to an array if it is not already an array.
 
@@ -821,7 +876,7 @@ curl http://localhost:3000/?friends=joey&friends=kate
 // 200 OK, ctx.vals.friends => ['joey', 'kate']
 ```
 
-#### .toInt([tip])
+### .toInt([tip])
 
 Parses and converts val into an integer.
 
@@ -854,7 +909,7 @@ curl http://localhost:3000/?age=9007199254740992
 // ValidationError (out of integer range)
 ```
 
-#### .toInts([tip])
+### .toInts([tip])
 
 Converts each string in val into an integer.
 
@@ -888,7 +943,7 @@ curl http://localhost:3000/?guesses=1.2345
 // ValidationError (one guess does not parse into an int because it is a decimal)
 ```
 
-#### .uniq()
+### .uniq()
 
 Removes duplicate items from val which must be an array.
 
@@ -909,7 +964,7 @@ curl http://localhost:3000/?nums=42&nums=42&nums=42
 // 200 OK, ctx.vals.nums => [42]
 ```
 
-#### .toBoolean()
+### .toBoolean()
 
 Coerces val into boolean `true` | `false`.
 
@@ -926,7 +981,7 @@ ctx.validateBody('remember-me')
   .toBoolean()
 ```
 
-#### .toDecimal([tip])
+### .toDecimal([tip])
 
 Converts val to float, but ensures that it a plain ol decimal number.
 
@@ -940,7 +995,7 @@ ctx.validateBody('num')
   .isFiniteNumber() // <-- Redundant
 ```
 
-#### .toFloat([tip])
+### .toFloat([tip])
 
 Converts val to float, throws if it fails.
 
@@ -963,7 +1018,7 @@ ctx.validateBody('num')
   .isFiniteNumber()
 ```
 
-#### .toFiniteFloat([tip])
+### .toFiniteFloat([tip])
 
 Shortcut for:
 
@@ -983,7 +1038,7 @@ is undefined behavior that koa-bouncer does not want to make assumptions about.
 
 **TODO**: Think of a use-case and then write an example.
 
-#### .trim()
+### .trim()
 
 Trims whitespace off the left and right side of val which **must** be a string.
 
@@ -1004,7 +1059,7 @@ ctx.validateBody('username')
   .trim();
 ```
 
-#### .fromJson([tip])
+### .fromJson([tip])
 
 Parses val into a JSON object.
 
@@ -1016,7 +1071,7 @@ ctx.validateBody('data')
   .fromJson()
 ```
 
-#### .tap(fn, [tip])
+### .tap(fn, [tip])
 
 Passes val into given `fn` and sets val to the result of `fn(val)`.
 
@@ -1044,7 +1099,7 @@ curl http://localhost:3000/?direction=WeST
 => 200 OK, ctx.vals.direction => 'west'
 ```
 
-#### .encodeBase64([tip])
+### .encodeBase64([tip])
 
 Converts val string into base64 encoded string.
 
@@ -1058,7 +1113,7 @@ ctx.validateBody('message')
   .val(); //=> 'aGVsbG8='
 ```
 
-#### .decodeBase64([tip])
+### .decodeBase64([tip])
 
 Decodes val string from base64 to string.
 
@@ -1072,7 +1127,7 @@ ctx.validateBody('message')
   .val(); //=> 'hello'
 ```
 
-#### .clamp(min::Number, max::Number)
+### .clamp(min::Number, max::Number)
 
 Defines a number range that val is restricted to. If val exceeds this range
 in either direction, val is updated to the min or max of the range.
